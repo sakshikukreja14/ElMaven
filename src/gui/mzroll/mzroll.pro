@@ -157,7 +157,8 @@ FORMS = forms/settingsform.ui  \
         forms/gettingstarted.ui \
         forms/pollywaitdialog.ui \
         forms/peaktabledeletiondialog.ui \
-        forms/isotopedialog.ui
+        forms/isotopedialog.ui \
+        forms/adductwidget.ui
 
 HEADERS += stable.h \
            globals.h \
@@ -234,7 +235,9 @@ HEADERS += stable.h \
            notificator_p.h \
            $$top_srcdir/crashhandler/elmavexceptionhandler.h \
            videoplayer.h \
-           isotopedialog.h
+           isotopedialog.h \
+           adductwidget.h
+
 
 SOURCES += mainwindow.cpp \
            database.cpp \
@@ -307,7 +310,8 @@ SOURCES += mainwindow.cpp \
            peaktabledeletiondialog.cpp \
            notificator.cpp \
            videoplayer.cpp \
-           isotopedialog.cpp
+           isotopedialog.cpp \
+           adductwidget.cpp
 
 
 contains (DEFINES,EMBEDHTTPSERVER) {
