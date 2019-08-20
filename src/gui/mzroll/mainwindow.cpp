@@ -3,7 +3,6 @@
 #include <QRegExp>
 #include <qcustomplot.h>
 
-#include "adductwidget.h"
 #include "SRMList.h"
 #include "alignmentdialog.h"
 #include "alignmentvizallgroupswidget.h"
@@ -183,16 +182,6 @@ using namespace mzUtils;
 	QString dataDir = ".";
 	unloadableFiles.reserve(50);
 
-	QList<QString> dirs;
-	dirs << dataDir << QApplication::applicationDirPath()
-		 << QApplication::applicationDirPath() + "/../Resources/";
-
-	//find location of DATA
-	Q_FOREACH (QString d, dirs){
-		QFile test(d+"/ADDUCTS.csv");
-		if (test.exists()) {dataDir=d; settings->setValue("dataDir", dataDir); break;}
-	}
-
 	setWindowTitle(programName + " " + STR(EL_MAVEN_VERSION));
 
 	//locations of common files and directories
@@ -218,11 +207,6 @@ using namespace mzUtils;
 	QString commonFragments = dataDir + "/" + "FRAGMENTS.csv";
 	if (QFile::exists(commonFragments))
 		DB.loadFragments(commonFragments.toStdString());
-
-	QString commonAdducts = dataDir + "/" + "ADDUCTS.csv";
-	if (QFile::exists(commonAdducts))
-		DB.loadFragments(commonAdducts.toStdString());
-
 
 	clsf = new ClassifierNeuralNet();    //clsf = new ClassifierNaiveBayes();
 		mavenParameters = new MavenParameters(QString(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QDir::separator() + "lastRun.xml").toStdString());
@@ -334,7 +318,6 @@ using namespace mzUtils;
 	pathwayPanel = new TreeDockWidget(this, "Pathways", 1);
 	srmDockWidget = new TreeDockWidget(this, "SRM List", 1);
 	ligandWidget = new LigandWidget(this);
-	adductWidget = new AdductWidget(this);
 	heatmap = new HeatMap(this);
 	galleryWidget = new GalleryWidget(this);
 	bookmarkedPeaks = new BookmarkTableDockWidget(this);
