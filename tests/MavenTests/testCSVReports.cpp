@@ -132,7 +132,9 @@ void TestCSVReports::testaddGroup()
 
     PeakDetector targetedPeakDetector;
     targetedPeakDetector.setMavenParameters(mavenparameters);
-    vector<mzSlice*> slices = targetedPeakDetector.processCompounds(compounds, "compounds");
+    vector<mzSlice*> slices = targetedPeakDetector.processCompounds(compounds,
+                                                                    mavenparameters->getDefaultAdductList(),
+                                                                    "compounds");
     targetedPeakDetector.processSlices(slices, "compounds");
 
     verifyTargetedGroupReport(samplesToLoad, mavenparameters);

@@ -79,8 +79,10 @@ int main(int argc, char *argv[]) {
 
 	//process compound list
 	if (peakdetectorCLI->mavenParameters->compounds.size() && !peakdetectorCLI->mavenParameters->processAllSlices) {
-		vector<mzSlice*> slices = peakdetectorCLI->peakDetector->processCompounds(
-				peakdetectorCLI->mavenParameters->compounds, "compounds");
+        vector<mzSlice*> slices =
+            peakdetectorCLI->peakDetector->processCompounds(peakdetectorCLI->mavenParameters->compounds,
+                                                            peakdetectorCLI->mavenParameters->getDefaultAdductList(),
+                                                            "compounds");
 		peakdetectorCLI->peakDetector->processSlices(slices, "compounds");
 		if (peakdetectorCLI->mavenParameters->pullIsotopesFlag) {
 			peakdetectorCLI->peakDetector->pullAllIsotopes();
