@@ -66,6 +66,7 @@ PeakGroup::PeakGroup()  {
     maxMz=0;
 
     parent = NULL;
+    parentIon = nullptr;
 
     // TODO: MAVEN (upstream) strikes again. Why was it commented out?
     adduct = NULL;
@@ -142,6 +143,7 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
     maxMz=o.maxMz;
 
     parent = o.parent;
+    parentIon = o.parentIon;
     setSlice(o.getSlice());
 
     srmId=o.srmId;
@@ -175,6 +177,10 @@ void PeakGroup::copyChildren(const PeakGroup& o) {
     for(unsigned int i=0; i < children.size(); i++ ) children[i].parent = this;
     for(unsigned int i=0; i < childrenBarPlot.size(); i++ )
         childrenBarPlot[i].parent = this;
+
+    childAdducts = o.childAdducts;
+    for (auto& adductGroup : childAdducts)
+        adductGroup.parent = this;
 }
 
 void PeakGroup::clear() {
