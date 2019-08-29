@@ -37,6 +37,8 @@ void IsotopeDetection::pullIsotopes(PeakGroup* parentgroup)
         return;
     if (parentgroup->getCompound()->formula.empty() == true)
         return;
+    if (parentgroup->adduct != nullptr && parentgroup->parentIon != nullptr)
+        return;
     if (_mavenParameters->samples.size() == 0)
         return;
 
