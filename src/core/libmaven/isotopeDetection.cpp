@@ -37,22 +37,20 @@ void IsotopeDetection::pullIsotopes(PeakGroup* parentgroup)
         return;
     if (parentgroup->getCompound()->formula.empty() == true)
         return;
-    if (parentgroup->adduct != nullptr && parentgroup->parentIon != nullptr)
-        return;
     if (_mavenParameters->samples.size() == 0)
         return;
 
     string formula = parentgroup->getCompound()->formula; //parent formula
     int charge = _mavenParameters->getCharge(parentgroup->getCompound());//generate isotope list for parent mass
 
-    vector<Isotope> masslist = MassCalculator::computeIsotopes(
-        formula,
-        charge,
-        _C13Flag,
-        _N15Flag,
-        _S34Flag,
-        _D2Flag
-    );
+    vector<Isotope> masslist =
+        MassCalculator::computeIsotopes(formula,
+                                        charge,
+                                        _C13Flag,
+                                        _N15Flag,
+                                        _S34Flag,
+                                        _D2Flag,
+                                        parentgroup->getAdduct());
 
     map<string, PeakGroup> isotopes = getIsotopes(parentgroup, masslist);
 
@@ -324,7 +322,7 @@ void IsotopeDetection::childStatistics(
     child.groupId = parentgroup->groupId;
     child.setCompound(parentgroup->getCompound());
     child.parent = parentgroup;
-    child.setType(PeakGroup::Isotope);
+    child.setType(PeakGroup::GroupType::Isotope);
     child.groupStatistics();
 
     bool deltaRtCheckFlag = _mavenParameters->deltaRtCheckFlag;
