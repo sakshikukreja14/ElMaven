@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "Compound.h"
 #include "csvreports.h"
+#include "datastructures/adduct.h"
 #include "mzSample.h"
 #include "mzUtils.h"
 #include "mavenparameters.h"
@@ -100,6 +101,7 @@ void CSVReports::insertGroupReportColumnNamesintoCSVFile(string outputfile,
                             << "medMz"
                             << "medRt"
                             << "maxQuality"
+                            << "adductName"
                             << "isotopeLabel"
                             << "compound"
                             << "compoundId"
@@ -332,6 +334,10 @@ void CSVReports::writeGroupInfo(PeakGroup* group) {
     char label[2];
     sprintf(label, "%c", group->label);
 
+    string adductName = "";
+    if (group->getAdduct() != nullptr)
+        adductName = group->getAdduct()->getName();
+
     groupReport << label
                 << SEP << parentGroup->groupId
                 << SEP << groupId
@@ -340,6 +346,7 @@ void CSVReports::writeGroupInfo(PeakGroup* group) {
                 << SEP << setprecision(6) << group->meanMz
                 << SEP << setprecision(3) << group->meanRt
                 << SEP << setprecision(6) << group->maxQuality
+                << SEP << adductName
                 << SEP << tagString;
 
     string compoundName = "";
