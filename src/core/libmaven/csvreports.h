@@ -83,7 +83,10 @@ public:
     }
 
     void writeDataForPolly(const std::string& file, std::list<PeakGroup> groups);
-    
+
+    static bool writeDataForPeakMl(const string& filePath,
+                                   const vector<PeakGroup>& groups);
+
     MavenParameters* getMavenParameters() {
        /**
         *@brief- return set MavenParameters. MavenParameters holds all variable value input by users
