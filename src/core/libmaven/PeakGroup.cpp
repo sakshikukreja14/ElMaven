@@ -44,9 +44,8 @@ PeakGroup::PeakGroup()  {
     maxPeakOverlap=0;
     maxQuality=0;
     avgPeakQuality=0;
-    groupQuality=0;
-    weightedAvgPeakQuality=0;
     predictedLabel = ClassifiedLabel::None;
+    predictionProbability = 0.0f;
     minQuality = 0.2;
     minIntensity = 0;
 
@@ -124,9 +123,8 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
     maxPeakOverlap=o.maxPeakOverlap;
     maxQuality=o.maxQuality;
     avgPeakQuality=o.avgPeakQuality;
-    groupQuality=o.groupQuality;
-    weightedAvgPeakQuality=o.weightedAvgPeakQuality;
     predictedLabel=o.predictedLabel;
+    predictionProbability=o.predictionProbability;
     expectedRtDiff=o.expectedRtDiff;
     expectedAbundance = o.expectedAbundance;
     isotopeC13count=o.isotopeC13count;
@@ -155,10 +153,6 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
     changePValue    = o.changePValue;
     peaks = o.peaks;
     samples=o.samples;
-
-    markedBadByCloudModel = o.markedBadByCloudModel;
-    markedGoodByCloudModel = o.markedGoodByCloudModel;
-
 
     copyChildren(o);
 }
@@ -510,17 +504,12 @@ void PeakGroup::updateQuality() {
     goodPeakCount=0;
 
     float peakQualitySum=0;
-    float weightedSum=0;
-    float sumWeights=0;
     for(const auto peak : peaks) {
         if(peak.quality > maxQuality) maxQuality = peak.quality;
         if(peak.quality > minQuality) goodPeakCount++; //Sabu
         peakQualitySum += peak.quality;
-        weightedSum += peak.quality * peak.peakIntensity;
-        sumWeights += peak.peakIntensity;
     }
     avgPeakQuality = peakQualitySum / peaks.size();
-    weightedAvgPeakQuality = weightedSum / sumWeights;
 }
 
 // TODO: Remove this function as expected mz should be calculated while creating the group - Sahil
@@ -583,8 +572,6 @@ void PeakGroup::groupStatistics() {
     maxPeakFracionalArea=0;
     maxQuality=0;
     avgPeakQuality=0;
-    groupQuality=0;
-    weightedAvgPeakQuality=0;
     goodPeakCount=0;
     maxSignalBaselineRatio=0;
     //quantileIntensityPeaks;
@@ -593,8 +580,6 @@ void PeakGroup::groupStatistics() {
     //@Kailash: Added for Avg Peak Quality and Intensity Weighted Peak Quality
     float peakQualitySum=0;
     float highestIntensity=0;
-    float weightedSum = 0;
-    float sumWeights = 0;
 
     for(unsigned int i=0; i< peaks.size(); i++) {
         if(peaks[i].pos != 0 && peaks[i].baseMz != 0) { rtSum += peaks[i].rt; mzSum += peaks[i].baseMz; nonZeroCount++; }
@@ -646,13 +631,10 @@ void PeakGroup::groupStatistics() {
             if(peaks[i].peakIntensity > sampleMax) sampleMax = peaks[i].peakIntensity;
         }
 
-        weightedSum += peaks[i].quality * peaks[i].peakIntensity;
-        sumWeights += peaks[i].peakIntensity;
         peakQualitySum += peaks[i].quality;
         if (peaks[i].peakIntensity > highestIntensity) highestIntensity = peaks[i].peakIntensity;
     }
     avgPeakQuality = peakQualitySum / peaks.size();
-    weightedAvgPeakQuality = weightedSum/sumWeights;
 
     if (sampleCount>0) sampleMean = sampleMean/sampleCount;
     if ( nonZeroCount ) {

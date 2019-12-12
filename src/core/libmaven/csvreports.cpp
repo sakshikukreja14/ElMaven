@@ -264,38 +264,6 @@ void CSVReports::closeFiles() {
         peakReport.close();
 }
 
-void CSVReports::writeDataForPolly(const std::string& file, std::list<PeakGroup> groups)
-{
-    groupReport.open(file.c_str());
-    if(groupReport.is_open()) {
-        groupReport << "labelML" << "," << "isotopeLabel" << "," << "compound";
-        groupReport << endl;
-        for(auto grp: groups) {
-            for(auto child: grp.children) {
-
-                int mlLabel =  (child.markedGoodByCloudModel) ? 1 : (child.markedBadByCloudModel) ? 0 : -1;
-                groupReport << mlLabel;
-                groupReport << ",";
-
-                string tagString = child.srmId + child.tagString;
-                tagString = sanitizeString(tagString.c_str()).toStdString();
-                groupReport << tagString ;
-                groupReport << ",";
-
-                string compoundName = "";
-                if(child.getCompound() != NULL)
-                    compoundName = sanitizeString(child.getCompound()->name.c_str()).toStdString();
-                else
-                    compoundName = std::to_string(child.meanMz) + "@" + std::to_string(child.meanRt);
-                groupReport << compoundName;
-
-                groupReport << endl;
-            }
-        }
-    }
-    groupReport.close();
-}
-
 bool CSVReports::writeDataForPeakMl(const string& filePath,
                                     const vector<PeakGroup>& groups)
 {

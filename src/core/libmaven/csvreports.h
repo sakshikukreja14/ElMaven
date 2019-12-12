@@ -82,8 +82,6 @@ public:
         mavenparameters = mp;
     }
 
-    void writeDataForPolly(const std::string& file, std::list<PeakGroup> groups);
-
     static bool writeDataForPeakMl(const string& filePath,
                                    const vector<PeakGroup>& groups);
 
