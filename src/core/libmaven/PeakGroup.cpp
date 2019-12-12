@@ -125,6 +125,7 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
     avgPeakQuality=o.avgPeakQuality;
     predictedLabel=o.predictedLabel;
     predictionProbability=o.predictionProbability;
+    predictionInference=o.predictionInference;
     expectedRtDiff=o.expectedRtDiff;
     expectedAbundance = o.expectedAbundance;
     isotopeC13count=o.isotopeC13count;
