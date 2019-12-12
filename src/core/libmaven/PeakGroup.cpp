@@ -46,7 +46,7 @@ PeakGroup::PeakGroup()  {
     avgPeakQuality=0;
     groupQuality=0;
     weightedAvgPeakQuality=0;
-    predictedLabel=0;
+    predictedLabel = ClassifiedLabel::None;
     minQuality = 0.2;
     minIntensity = 0;
 
@@ -585,7 +585,6 @@ void PeakGroup::groupStatistics() {
     avgPeakQuality=0;
     groupQuality=0;
     weightedAvgPeakQuality=0;
-    predictedLabel=0;
     goodPeakCount=0;
     maxSignalBaselineRatio=0;
     //quantileIntensityPeaks;
