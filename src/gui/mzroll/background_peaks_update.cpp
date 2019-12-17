@@ -460,10 +460,17 @@ void BackgroundPeakUpdate::classifyGroups(vector<PeakGroup>& groups)
 #ifdef Q_OS_WIN
     auto mlBinary = tempDir + QDir::separator() + "MOI.exe";
 #endif
+    auto mlModel = tempDir + QDir::separator() + "model.pickle.dat";
 
     if (!QFile::exists(mlBinary)) {
         cerr << "Error: ML binary not found at path: "
              << mlBinary.toStdString()
+             << endl;
+        return;
+    }
+    if (!QFile::exists(mlModel)) {
+        cerr << "Error: ML model not found at path: "
+             << mlModel.toStdString()
              << endl;
         return;
     }
@@ -491,7 +498,8 @@ void BackgroundPeakUpdate::classifyGroups(vector<PeakGroup>& groups)
 
     QStringList mlArguments;
     mlArguments << "--ambiguousfeatureDataFile" << peakAttributesFile
-                << "--MOIDataFileName" << classificationOutputFile;
+                << "--MOIDataFileName" << classificationOutputFile
+                << "--modelPath" << mlModel;
     QProcess subProcess;
     subProcess.setWorkingDirectory(QFileInfo(mlBinary).path());
     subProcess.start(mlBinary, mlArguments);
