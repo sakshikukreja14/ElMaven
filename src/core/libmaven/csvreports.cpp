@@ -322,12 +322,12 @@ void CSVReports::writeGroupInfo(PeakGroup* group) {
     groupId++;
 
     char lab;
-    lab = group->label;
+    lab = group->userLabel();
 
     PeakGroup* parentGroup = group->getParent();
     if (parentGroup) {
-        if (group->label == '\0') {
-            lab = parentGroup->label;
+        if (group->userLabel() == '\0') {
+            lab = parentGroup->userLabel();
         }
     }
     else{
@@ -350,7 +350,7 @@ void CSVReports::writeGroupInfo(PeakGroup* group) {
     tagString = sanitizeString(tagString.c_str()).toStdString();
 
     char label[2];
-    sprintf(label, "%c", group->label);
+    sprintf(label, "%c", group->userLabel());
 
     groupReport << label
                 << SEP << parentGroup->groupId
@@ -471,11 +471,11 @@ void CSVReports::writePeakInfo(PeakGroup* group) {
     }
 
     if (selectionFlag == 2) {
-        if(group->label !='g') return;
+        if(group->userLabel() !='g') return;
     } else if (selectionFlag == 3) {
-        if(group->label !='b') return;
+        if(group->userLabel() !='b') return;
     } else if (selectionFlag == 4) {
-        if (group->label == 'b') return;
+        if (group->userLabel() == 'b') return;
     }
 
     // sort the peaks in the group according to the sample names using a comparison function

@@ -44,10 +44,11 @@ PeakGroup::PeakGroup()  {
     maxPeakOverlap=0;
     maxQuality=0;
     avgPeakQuality=0;
-    predictedLabel = ClassifiedLabel::None;
-    predictionProbability = 0.0f;
     minQuality = 0.2;
     minIntensity = 0;
+
+    _predictedLabel = ClassifiedLabel::None;
+    _predictionProbability = 0.0f;
 
     //quantileIntensityPeaks = 0;
     //quantileQualityPeaks = 0;
@@ -68,7 +69,7 @@ PeakGroup::PeakGroup()  {
     adduct = NULL;
 
     isFocused=false;
-    label=0;    //classification label
+    _userLabel = '\0';    // default user classification label
 
     goodPeakCount=0;
     _type = None;
@@ -123,9 +124,6 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
     maxPeakOverlap=o.maxPeakOverlap;
     maxQuality=o.maxQuality;
     avgPeakQuality=o.avgPeakQuality;
-    predictedLabel=o.predictedLabel;
-    predictionProbability=o.predictionProbability;
-    predictionInference=o.predictionInference;
     expectedRtDiff=o.expectedRtDiff;
     expectedAbundance = o.expectedAbundance;
     isotopeC13count=o.isotopeC13count;
@@ -143,7 +141,7 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
 
     srmId=o.srmId;
     isFocused=o.isFocused;
-    label=o.label;
+    _userLabel = o._userLabel;
 
     goodPeakCount=o.goodPeakCount;
     _type = o._type;
@@ -154,6 +152,10 @@ void PeakGroup::copyObj(const PeakGroup& o)  {
     changePValue    = o.changePValue;
     peaks = o.peaks;
     samples=o.samples;
+
+    _predictedLabel = o.predictedLabel();
+    _predictionProbability = o.predictionProbability();
+    _predictionInference = o.predictionInference();
 
     copyChildren(o);
 }
@@ -877,4 +879,56 @@ void PeakGroup::setSelectedSamples(vector<mzSample*> vsamples){
             samples.push_back(vsamples[i]);
         }
     }
+}
+
+void PeakGroup::setUserLabel(char label)
+{
+    if (label == 'g') {
+        _predictedLabel = ClassifiedLabel::Signal;
+    } else if (label == 'b') {
+        _predictedLabel = ClassifiedLabel::Noise;
+    } else if (label == '\0') {
+        _predictedLabel = ClassifiedLabel::None;
+    } else {
+        // ignore invalid labels
+        return;
+    }
+    _predictionProbability = 0.0f;
+    _predictionInference.clear();
+    _userLabel = label;
+}
+
+void PeakGroup::setPredictedLabel(const ClassifiedLabel label,
+                                  const float probability)
+{
+    _predictedLabel = label;
+    if (_predictedLabel == ClassifiedLabel::None) {
+        this->_userLabel = '\0';
+    } else if (_predictedLabel == ClassifiedLabel::Noise) {
+        this->_userLabel = 'b';
+    } else {
+        this->_userLabel = 'g';
+    }
+
+    _predictionProbability = probability;
+}
+
+void PeakGroup::setPredictionInference(const multimap<float, string>& inference)
+{
+    _predictionInference = inference;
+}
+
+PeakGroup::ClassifiedLabel PeakGroup::predictedLabel() const
+{
+    return _predictedLabel;
+}
+
+float PeakGroup::predictionProbability() const
+{
+    return _predictionProbability;
+}
+
+multimap<float, string> PeakGroup::predictionInference() const
+{
+    return _predictionInference;
 }

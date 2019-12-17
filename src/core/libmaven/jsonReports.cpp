@@ -25,12 +25,12 @@ void JSONReports::writeGroupMzEICJson(PeakGroup& grp,ofstream& myfile, vector<mz
     }
 
     //add labels to json file
-    char lab = grp.label;
+    char lab = grp.userLabel();
 
     PeakGroup* parentGroup = grp.getParent();
     if (parentGroup) {
-        if (grp.label == '\0') {
-            lab = parentGroup->label;
+        if (grp.userLabel() == '\0') {
+            lab = parentGroup->userLabel();
         }
     }
 

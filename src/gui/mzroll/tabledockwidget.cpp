@@ -198,6 +198,32 @@ void TableDockWidget::updateTable() {
   updateStatus();
 }
 
+void TableDockWidget::_paintClassificationDisagreement(QTreeWidgetItem *item)
+{
+  QVariant v = item->data(1, Qt::UserRole);
+  PeakGroup *group = v.value<PeakGroup *>();
+  int numGood = 0;
+  int numBad = 0;
+  int total = group->peakCount();
+  for (int i = 0; i < group->peakCount(); i++) {
+    group->peaks[i].quality > _mainwindow->mavenParameters->minQuality
+          ? numGood++
+          : numBad++;
+  }
+
+  float incorrectFraction = 0.0f;
+  if (numGood > 0 && group->userLabel() == 'b') {
+    incorrectFraction = static_cast<float>(numGood) / total;
+  } else if (numBad > 0 && group->userLabel() == 'g') {
+    incorrectFraction = static_cast<float>(numBad) / total;
+  }
+  QLinearGradient gradient(18, 6, 48, 6);
+  gradient.setColorAt(0, QColor::fromRgbF(1, 1, 1, 0));
+  gradient.setColorAt(1, QColor::fromRgbF(0.8, 0.2, 0.2, incorrectFraction));
+  QBrush brush(gradient);
+  item->setBackground(0, brush);
+}
+
 void TableDockWidget::updateItem(QTreeWidgetItem *item) {
   QVariant v = item->data(1, Qt::UserRole);
   PeakGroup *group = v.value<PeakGroup *>();
@@ -210,26 +236,27 @@ void TableDockWidget::updateItem(QTreeWidgetItem *item) {
 
   item->setText(2, QString(group->getName().c_str()));
 
-  int good = 0;
-  int bad = 0;
-  int total = group->peakCount();
-  for (int i = 0; i < group->peakCount(); i++) {
-    group->peaks[i].quality > _mainwindow->mavenParameters->minQuality ? good++
-                                                                       : bad++;
-  }
-
-  QBrush brush = Qt::NoBrush;
-  if (good > 0 && group->label == 'b') {
-    float incorrectFraction = ((float)good) / total;
-    brush = QBrush(QColor::fromRgbF(0.8, 0, 0, incorrectFraction));
-  } else if (bad > 0 && group->label == 'g') {
-    float incorrectFraction = ((float)bad) / total;
-    brush = QBrush(QColor::fromRgbF(0.8, 0, 0, incorrectFraction));
-  }
-  item->setBackground(0, brush);
-
-  if (group->label == 'g'
-      || group->predictedLabel == PeakGroup::ClassifiedLabel::Signal) {
+  if (group->predictedLabel() == PeakGroup::ClassifiedLabel::Correlation) {
+    item->setIcon(0, QIcon(":/images/moi_correlated.png"));
+    QString castLabel = "PeakGroup::ClassifiedLabel::Correlation";
+    item->setData(0,
+                  Qt::UserRole,
+                  QVariant::fromValue(castLabel));
+  } else if (group->predictedLabel() == PeakGroup::ClassifiedLabel::Pattern) {
+    item->setIcon(0, QIcon(":/images/moi_pattern.png"));
+    QString castLabel = "PeakGroup::ClassifiedLabel::Pattern";
+    item->setData(0,
+                  Qt::UserRole,
+                  QVariant::fromValue(castLabel));
+  } else if (group->predictedLabel()
+             == PeakGroup::ClassifiedLabel::CorrelationAndPattern) {
+    item->setIcon(0, QIcon(":/images/moi_pattern_correlated.png"));
+    QString castLabel = "PeakGroup::ClassifiedLabel::CorrelationAndPattern";
+    item->setData(0,
+                  Qt::UserRole,
+                  QVariant::fromValue(castLabel));
+  } else if (group->predictedLabel() == PeakGroup::ClassifiedLabel::Signal
+             || group->userLabel() == 'g') {
     item->setIcon(0, QIcon(":/images/good.png"));
     // we have to store stringified classifier labels because QVariant has
     // issues with standard enum classes
@@ -237,29 +264,10 @@ void TableDockWidget::updateItem(QTreeWidgetItem *item) {
     item->setData(0,
                   Qt::UserRole,
                   QVariant::fromValue(castLabel));
-  } else if (group->label == 'b'
-             || group->predictedLabel == PeakGroup::ClassifiedLabel::Noise) {
+  } else if (group->predictedLabel() == PeakGroup::ClassifiedLabel::Noise
+             || group->userLabel() == 'b') {
     item->setIcon(0, QIcon(":/images/bad.png"));
     QString castLabel = "PeakGroup::ClassifiedLabel::Noise";
-    item->setData(0,
-                  Qt::UserRole,
-                  QVariant::fromValue(castLabel));
-  } else if (group->predictedLabel == PeakGroup::ClassifiedLabel::Correlation) {
-    item->setIcon(0, QIcon(":/images/moi_correlated.png"));
-    QString castLabel = "PeakGroup::ClassifiedLabel::Correlation";
-    item->setData(0,
-                  Qt::UserRole,
-                  QVariant::fromValue(castLabel));
-  } else if (group->predictedLabel == PeakGroup::ClassifiedLabel::Pattern) {
-    item->setIcon(0, QIcon(":/images/moi_pattern.png"));
-    QString castLabel = "PeakGroup::ClassifiedLabel::Pattern";
-    item->setData(0,
-                  Qt::UserRole,
-                  QVariant::fromValue(castLabel));
-  } else if (group->predictedLabel
-             == PeakGroup::ClassifiedLabel::CorrelationAndPattern) {
-    item->setIcon(0, QIcon(":/images/moi_pattern_correlated.png"));
-    QString castLabel = "PeakGroup::ClassifiedLabel::CorrelationAndPattern";
     item->setData(0,
                   Qt::UserRole,
                   QVariant::fromValue(castLabel));
@@ -269,7 +277,8 @@ void TableDockWidget::updateItem(QTreeWidgetItem *item) {
     item->setData(0,
                   Qt::UserRole,
                   QVariant::fromValue(castLabel));
- }
+  }
+  _paintClassificationDisagreement(item);
 
   if (filtersDialog->isVisible()) {
     float minG = sliders["GoodPeakCount"]->minBoundValue();
@@ -370,26 +379,6 @@ void TableDockWidget::addRow(PeakGroup *group, QTreeWidgetItem *root) {
 
   item->setText(5, QString::number(group->meanRt, 'f', 2));
 
-  if (group->label == 'g') {
-    item->setIcon(0, QIcon(":/images/good.png"));
-    QString castLabel = "PeakGroup::ClassifiedLabel::Signal";
-    item->setData(0,
-                  Qt::UserRole,
-                  QVariant::fromValue(castLabel));
-  } else if (group->label == 'b') {
-    item->setIcon(0, QIcon(":/images/bad.png"));
-    QString castLabel = "PeakGroup::ClassifiedLabel::Noise";
-    item->setData(0,
-                  Qt::UserRole,
-                  QVariant::fromValue(castLabel));
-  } else {
-    item->setIcon(0, QIcon());
-    QString castLabel = "PeakGroup::ClassifiedLabel::None";
-    item->setData(0,
-                  Qt::UserRole,
-                  QVariant::fromValue(castLabel));
-  }
-
   if (viewType == groupView) {
     item->setText(6, QString::number(group->expectedRtDiff, 'f', 2));
     item->setText(7, QString::number(group->sampleCount));
@@ -400,7 +389,7 @@ void TableDockWidget::addRow(PeakGroup *group, QTreeWidgetItem *root) {
     item->setText(12, QString::number(group->maxQuality, 'f', 2));
     item->setText(13, QString::number(group->fragMatchScore.mergedScore, 'f', 2));
     item->setText(14, QString::number(group->ms2EventCount));
-    item->setText(15, QString::number(group->predictionProbability, 'f', 3));
+    item->setText(15, QString::number(group->predictionProbability(), 'f', 3));
     item->setText(16, QString::number(group->groupRank, 'e', 6));
 
     if (group->changeFoldRatio != 0) {
@@ -521,6 +510,7 @@ void TableDockWidget::showAllGroups() {
   if (vScroll) {
     vScroll->setSliderPosition(vScroll->maximum());
   }
+  sortBy(1);
   treeWidget->setSortingEnabled(true);
   updateStatus();
   updateCompoundWidget();
@@ -912,11 +902,11 @@ TableDockWidget::getCustomGroups(peakTableSelectionType peakSelection) {
       PeakGroup *group = v.value<PeakGroup *>();
       if (group != NULL) {
         if (temppeakSelection == peakTableSelectionType::Good) {
-          if (group->label == 'g') {
+          if (group->userLabel() == 'g') {
             selectedGroups.append(group);
           }
         } else if (temppeakSelection == peakTableSelectionType::Bad) {
-          if (group->label == 'b') {
+          if (group->userLabel() == 'b') {
             selectedGroups.append(group);
           }
         } else {
@@ -946,7 +936,7 @@ void TableDockWidget::setGroupLabel(char label) {
       QVariant v = item->data(1, Qt::UserRole);
       PeakGroup *group = v.value<PeakGroup *>();
       if (group != NULL)
-        group->setLabel(label);
+        group->setUserLabel(label);
       updateItem(item);
     }
   }
@@ -1125,7 +1115,7 @@ bool TableDockWidget::checkLabeledGroups() {
 
   if (_mainwindow->peaksMarked >= allgroups.size()) {
     for (int i = 0; i < allgroups.size(); i++) {
-      char groupLabel = allgroups[i].label;
+      char groupLabel = allgroups[i].userLabel();
       if (groupLabel == 'g') {
         goodCount++;
       } else if (groupLabel == 'b') {
@@ -1182,9 +1172,9 @@ void TableDockWidget::Train() {
 
   for (int i = 0; i < allgroups.size(); i++) {
     PeakGroup *grp = &allgroups[i];
-    if (grp->label == 'g')
+    if (grp->userLabel() == 'g')
       good_groups.push_back(grp);
-    if (grp->label == 'b')
+    if (grp->userLabel() == 'b')
       bad_groups.push_back(grp);
   }
 
@@ -1310,7 +1300,7 @@ void TableDockWidget::updateStatus() {
   int ignoredCount = 0;
   int predictedGood = 0;
   for (int i = 0; i < allgroups.size(); i++) {
-    char groupLabel = allgroups[i].label;
+    char groupLabel = allgroups[i].userLabel();
     if (groupLabel == 'g') {
       goodCount++;
     } else if (groupLabel == 'b') {
@@ -1340,7 +1330,7 @@ float TableDockWidget::showAccuracy(vector<PeakGroup *> &groups) {
   int gc = 0;
   int bc = 0;
   for (int i = 0; i < groups.size(); i++) {
-    if (groups[i]->label == 'g' || groups[i]->label == 'b') {
+    if (groups[i]->userLabel() == 'g' || groups[i]->userLabel() == 'b') {
       for (int j = 0; j < groups[i]->peaks.size(); j++) {
         float q = groups[i]->peaks[j].quality;
         char l = groups[i]->peaks[j].label;
@@ -1490,8 +1480,9 @@ void TableDockWidget::contextMenuEvent(QContextMenuEvent *event) {
               double sumNegativeWeights = 0.0;
               double sumPositiveWeights = 0.0;
               QHorizontalStackedBarSeries *series = new QHorizontalStackedBarSeries();
-              for (auto it = group->predictionInference.begin();
-                   it != group->predictionInference.end();
+              auto predictionInference = group->predictionInference();
+              for (auto it = predictionInference.begin();
+                   it != predictionInference.end();
                    ++it) {
                 if (it->first < 0 && counter < top_n) {
                   QBarSet* set = new QBarSet(it->second.c_str());
@@ -1504,8 +1495,8 @@ void TableDockWidget::contextMenuEvent(QContextMenuEvent *event) {
                 }
               }
               counter = 0;
-              for (auto it = group->predictionInference.rbegin();
-                   it != group->predictionInference.rend();
+              for (auto it = predictionInference.rbegin();
+                   it != predictionInference.rend();
                    ++it) {
                 if (it->first > 0 && counter < top_n) {
                   QBarSet* set = new QBarSet(it->second.c_str());
@@ -1697,7 +1688,7 @@ void TableDockWidget::saveModel() {
   if (clsf) {
     vector<PeakGroup *> groups;
     for (int i = 0; i < allgroups.size(); i++)
-      if (allgroups[i].label == 'g' || allgroups[i].label == 'b')
+      if (allgroups[i].userLabel() == 'g' || allgroups[i].userLabel() == 'b')
         groups.push_back(&allgroups[i]);
     clsf->saveFeatures(groups, fileName.toStdString() + ".csv");
   }
