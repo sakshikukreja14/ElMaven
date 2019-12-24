@@ -438,7 +438,8 @@ map<int, string> dbVersionUpgradeScripts = {
         "DROP TABLE user_settings_old;"
 
         "COMMIT;"
-    }
+    },
+    // TODO: add instructions to upgrade `peakgroup` table for PeakML attributes
 };
 
 ////////////////////////////////////////////////////////////////////////////////
