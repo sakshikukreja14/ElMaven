@@ -5,7 +5,7 @@
 #include "PeakDetector.h"
 #include "classifierNeuralNet.h"
 #include "constants.h"
-#include "databases.h"
+#include "database.h"
 #include "doctest.h"
 #include "isotopeDetection.h"
 #include "masscutofftype.h"
@@ -508,7 +508,7 @@ class CSVReportFixture
     vector<PeakGroup> _allgroups;
     MavenParameters* _mavenparameters;
     std::list<PeakGroup> _isotopeGroups;
-    Databases database;
+    Database database;
 
     void _makeSampleList()
     {
