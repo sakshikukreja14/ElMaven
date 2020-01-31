@@ -7,6 +7,7 @@
 #include "masscutofftype.h"
 #include "mzUtils.h"
 #include "peakdetectorcli.h"
+#include <vector>
 
 PeakDetectorCLI::PeakDetectorCLI(Logger* log, Analytics* analytics)
 {
@@ -588,7 +589,9 @@ void PeakDetectorCLI::loadCompoundsFile()
     mavenParameters->processAllSlices = false;
     _log->info() << "Loading compound database…" << std::flush;
     int loadCount = _db.loadCompoundCSVFile(mavenParameters->ligandDbFilename);
-    mavenParameters->compounds = _db.compoundsDB;
+
+    vector<Compound*> v(_db.compoundsDB.begin(),_db.compoundsDB.end());
+    mavenParameters->compounds = v;
 
     // exit if db is empty
     if (loadCount == 0) {

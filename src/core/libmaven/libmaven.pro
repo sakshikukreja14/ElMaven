@@ -54,6 +54,7 @@ INCLUDEPATH +=  $$top_srcdir/3rdparty/pugixml/src/ \
                 $$top_srcdir/3rdparty/NimbleDSP/src \
                 $$top_srcdir/3rdparty/doctest       \
                 $$top_srcdir/3rdparty/json
+                $$top_srcdir/3rdparty/libmgf
 
 QMAKE_LFLAGS += -L$$top_builddir/libs
 
@@ -95,7 +96,7 @@ SOURCES = base64.cpp \
           comparesampleslogic.cpp \
           isotopelogic.cpp \
           eiclogic.cpp \
-          databases.cpp \
+          database.cpp \
           Peptide.cpp \
           PolyAligner.cpp \
           jsonReports.cpp \
@@ -140,7 +141,7 @@ HEADERS += constants.h \
            EIC.h \
 	       Scan.h \
            SRMList.h \
-           databases.h \
+           database.h \
            Peptide.hpp \
            PeptideRecord.h \
            PolyAligner.h \

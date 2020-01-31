@@ -552,7 +552,7 @@ void PathwayWidget::setReactions(vector<string>& reactions) {
 	clear();
 	addReactions(reactions);
 
-	if (!_pathwayId.isEmpty()) {
+        if (!_pathwayId.isEmpty()) {
 		if (loadLayout(_pathwayId) == false)
 			newLayout();
 	} else {
@@ -581,16 +581,6 @@ MetaboliteNode* PathwayWidget::addMetabolite(QString id, Compound* c) {
 			n->setCofactor(true);
 		n->setGraphWidget(this);
 		nodelist[id] = n;
-
-		if (_showAtomCoordinatesFlag) {
-			Molecule2D* mol = DB.getMolecularCoordinates(id);
-			if (mol) {
-				n->showCoordinates(true);
-				n->setMolecularCoordinates(mol);
-			}
-		} else {
-			n->showCoordinates(false);
-		}
 
 		if (mw)
 			connect(n, SIGNAL(compoundFocused(Compound*)), mw,
@@ -681,22 +671,10 @@ bool PathwayWidget::setPathway(QString pid) {
 
 	//qDebug() << "PathwayWidget::setPathway() " << pid << endl;
 	clear();
-	vector<string> reactionsIds = DB.getPathwayReactions(pid.toStdString());
-	if (reactionsIds.size() == 0)
-		return false;
-
-	for (int i = 0; i < reactionsIds.size(); i++) {
-		if (reactionsIds[i].find("RXN") == string::npos) {
-			vector<string> subreactions = DB.getPathwayReactions(
-					reactionsIds[i]);
-			for (int j = 0; j < subreactions.size(); j++)
-				reactionsIds.push_back(subreactions[j]);
-		}
-	}
 	_pathwayId = pid;
 	_focusedCompound = NULL;
 	mw->getSettings()->setValue("pathwayId", pid);
-	setReactions(reactionsIds);
+        //setReactions(reactionsIds);
 	showLabels(true);
 }
 
@@ -760,81 +738,16 @@ bool PathwayWidget::saveLayout() {
 bool PathwayWidget::loadLayout(QString pid) {
 	//qDebug() << "PathwayWidget::loadLayout() " << pid << endl;
 
-	if (pid.isEmpty())
-		return false;
-	QSqlDatabase& db = DB.getLigandDB();
-	QSqlQuery query(db);
-	query.prepare("select * from pathways_layout where pathway_id = ?");
-	query.addBindValue(pid);
-	query.exec();
-
-	bool loadLayout = false;
-	while (query.next()) {
-		QString id = query.value(1).toString().simplified();
-		float x = query.value(2).toDouble();
-		float y = query.value(3).toDouble();
-		Node* n = locateNode(id);
-		if (n) {
-			n->setPos(x, y);
-			n->setDepth(1);
-			//	qDebug() << "loadLayout() " << id << " " << x << " " << y;
-		} else {
-			cerr << "Can't find node=" << id.toStdString() << "'" << endl;
-		}
-
-		loadLayout = true;
-	}
-	query.clear();
-	if (loadLayout == false)
-		return false;
-
-	//cerr << "adjust Enzyme Positions" << endl;
-	Q_FOREACH (Node* n, nodelist ){
-	int xpos=0; int ypos=0; int count=0;
-	if ( n->isEnzyme() && n->pos().x()==0 && n->pos().y()==0 ) {
-		Q_FOREACH (Edge* e, n->edges() ) {
-			Node* other = e->sourceNode();
-			if (e->sourceNode() == n) other=e->destNode();
-			if (!other->isCofactor() && other->pos().x()!=0 && other->pos().y()!=0) {
-				xpos += other->pos().x();
-				ypos += other->pos().y();
-				count++;
-			}
-		}
-	}
-	if (count) {xpos/=count; ypos/=count; n->setPos(xpos+1,ypos+1);}
-	if ( n->pos().x()==0 && n->pos().y() == 0) n->hide();
 }
 
-	resetZoom();
+bool PathwayWidget::loadLayout(QString pid)
+{
 
-	return loadLayout;
 }
 
-void PathwayWidget::addReactions(vector<string>& reactionsIds) {
-	for (int i = 0; i < reactionsIds.size(); i++) {
-		string rxnId = reactionsIds[i];
+void PathwayWidget::addReactions(vector<string>& reactionsIds)
+{
 
-		//if reaction has not been loaded.. load reaction
-		if (!locateNode(rxnId.c_str())) {
-			if (DB.reactionIdMap.count(rxnId) > 0) {
-				Reaction* r = DB.reactionIdMap[rxnId];
-				addReaction(r);
-			}
-		}
-
-		if (locateNode(rxnId.c_str())) {
-			EnzymeNode* enzyme = (EnzymeNode*) nodelist[rxnId.c_str()];
-
-			Q_FOREACH( Edge* e, enzyme->edges() ){
-			e->sourceNode()->setVisible(true);
-			e->destNode()->setVisible(true);
-			e->setVisible(true);
-		}
-			enzyme->setVisible(true);
-		}
-	}
-	showCofactors(_showCofactorsFlag);
 }
 
 void PathwayWidget::layoutCofactors() {
@@ -1687,61 +1600,10 @@ void PathwayWidget::exportPDF() {
 	QPainter painter(&printer);
 	painter.setRenderHint(QPainter::Antialiasing);
 	this->render(&painter);
-
-	/*
-	 QSvgGenerator generator;
-	 generator.setFileName(fileName);
-	 generator.setSize(QSize(scene()->width(), scene()->height()));
-	 generator.setViewBox(QRect(0, 0, scene()->width(), scene()->height()));
-	 generator.setTitle(tr("Pathway"));
-
-	 QPainter painter;
-	 painter.begin(&generator);
-	 this->render(&painter);
-	 painter.end();
-	 */
-
 }
 
-void PathwayWidget::getReactionPairs() {
-	qDebug() << "PathwayWidget::getReactionParis()";
-
-	//clear list of reaction pairs
-	if (rpairs.size()) {
-		delete_all(rpairs);
-	}
-
-	//construct list of reaction in current view
-	QStringList reactionsIds;
-	Q_FOREACH (Node* n, nodelist ){
-	if(!n->isEnzyme())continue;
-	EnzymeNode* enzyme = (EnzymeNode*) n;
-	if ( enzyme->getReaction() ) {
-		string rid = '"'+enzyme->getReaction()->id +'"';
-		reactionsIds << QString(rid.c_str());
-	}
-}
-//query database to get reaction pairs
-
-	QString sql =
-			tr("select * from reactions_rpairs where reaction_id in(%1)").arg(
-					reactionsIds.join(","));
-	//qDebug() << sql;
-	QSqlDatabase& db = DB.getLigandDB();
-	QSqlQuery query(db);
-	query.prepare(sql);
-	query.exec();
-
-	while (query.next()) {
-		Rpair* x = new Rpair;
-		x->reaction_id = query.value(0).toString();
-		x->rpair_id = query.value(1).toString();
-		x->species1 = query.value(2).toString();
-		x->species2 = query.value(3).toString();
-		rpairs.push_back(x);
-	}
-
-	qDebug() << "getReactionPairs() " << rpairs.size();
+void PathwayWidget::getReactionPairs()
+{
 
 }
 
@@ -1901,22 +1763,8 @@ void PathwayWidget::dragMoveEvent(QDragMoveEvent *event) {
 	event->accept();
 }
 
-QVector<QPoint> PathwayWidget::getEqualentAtoms(QString rpairId) {
-	QSqlDatabase& db = DB.getLigandDB();
-	QSqlQuery query(db);
-	QString sql =
-			"select atom1n, atom2n, atom1, atom2 from rpairs where rpair_id = ?";
-	query.prepare(sql);
-	query.addBindValue(rpairId);
-	query.exec();
+QVector<QPoint> PathwayWidget::getEqualentAtoms(QString rpairId)
+{
 
-	QVector<QPoint> atompairs;
-
-	while (query.next()) {
-		//qDebug() << query.value(0) << " " << query.value(1) << " | " << query.value(2) << " " << query.value(3);
-		QPoint pair(query.value(0).toInt() - 1, query.value(1).toInt() - 1);
-		atompairs << pair;
-	}
-
-	return atompairs;
 }
+

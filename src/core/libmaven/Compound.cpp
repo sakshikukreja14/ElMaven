@@ -29,6 +29,7 @@ Compound::Compound(string id, string name, string formula, int charge ) {
     ionizationMode = 0;
 }
 
+
 bool Compound::operator == (const Compound& rhs) const
 {
     return (id == rhs.id
@@ -69,7 +70,7 @@ bool Compound::operator == (const Compound& rhs) const
                      })
             && fragmentIonTypes == rhs.fragmentIonTypes
             && category == rhs.category
-            && type() == rhs.type());
+            && type() == rhs.type());    
 }
 
 float Compound::adjustedMass(int charge) { 

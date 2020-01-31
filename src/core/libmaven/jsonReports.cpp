@@ -8,7 +8,7 @@
 #include "mzUtils.h"
 #include "mavenparameters.h"
 #include "datastructures/mzSlice.h"
-#include "databases.h"
+#include "database.h"
 #include "classifierNeuralNet.h"
 #include "PeakDetector.h"
 
@@ -312,15 +312,10 @@ string JSONReports::_sanitizeJSONstring(string s)
 class JsonReportsFixture{
 
     private:
-            vector<mzSample*> _samples;
-            vector <PeakGroup> _allgroups;
-            MavenParameters* _mavenparameters;
-            Databases _database;
+            
 
-            /**
-             * @brief _makeSampleList Initialises the vector of the samples
-             * to be loaded.
-             */
+            Database database;
+            
             void _makeSampleList()
             {
                 auto sample1 = new mzSample();

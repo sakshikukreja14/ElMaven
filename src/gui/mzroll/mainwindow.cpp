@@ -603,7 +603,7 @@ using namespace mzUtils;
 
 
     setContextMenuPolicy(Qt::NoContextMenu);
-    pathwayPanel->setInfo(DB.pathwayDB);
+//    pathwayPanel->setInfo(DB.pathwayDB);
 
     scatterDockWidget->hide();
     spectralHitsDockWidget->hide();
@@ -4125,8 +4125,8 @@ QWidget* MainWindow::pathwayWidgetController() {
 
 	QToolButton *btnSave = new QToolButton(toolBar);
 	btnSave->setIcon(QIcon(rsrcPath + "/filesave.png"));
-	btnSave->setToolTip(tr("Save Layout"));
-	connect(btnSave, SIGNAL(clicked()), pathwayWidget, SLOT(saveLayout()));
+        btnSave->setToolTip(tr("Save Layout"));
+        connect(btnSave, SIGNAL(clicked()), pathwayWidget, SLOT(saveLayout()));
 
 	QToolButton *btnReculculte = new QToolButton(toolBar);
 	btnReculculte->setIcon(QIcon(rsrcPath + "/refresh.png"));

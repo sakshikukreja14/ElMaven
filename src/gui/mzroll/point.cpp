@@ -326,11 +326,8 @@ void EicPoint::linkCompound() {
 
             //log information about retention time change
            // _mw->getEicWidget()->addNote(_peak->peakMz,_peak->peakIntensity, "Compound Link");
-            _mw->getEicWidget()->saveRetentionTime();
 
-            //_mw->ligandWidget->updateTable();
             _mw->ligandWidget->updateCurrentItemData();
-
             //update pathway widget with new concentration information
             _mw->pathwayWidget->updateCompoundConcentrations();
 	}
