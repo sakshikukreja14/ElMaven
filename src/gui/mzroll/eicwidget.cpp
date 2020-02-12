@@ -257,8 +257,8 @@ void EicWidget::mouseDoubleClickEvent(QMouseEvent* event) {
 	float minDiff = FLT_MAX;
 	for (int i = 0; i < samples.size(); i++) {
 		for (int j = 0; j < samples[i]->scans.size(); j++) {
-			//if ( samples[i]->scans[j]->mslevel != 1) continue;
-			float diff = abs(samples[i]->scans[j]->rt - rt);
+                        //if ( samples[i]->scans[j]->mslevel != 1) continue;
+                        float diff = abs(samples[i]->scans[j]->rt() - rt);
 			if (diff < minDiff) {
 				minDiff = diff;
 				selScan = samples[i]->scans[j];
@@ -841,7 +841,7 @@ void EicWidget::addTicLine() {
 			int mslevel = 1;
 			//attempt at automatically detecting correct scan type for construstion of TIC
 
-            if  (samples[i]->scans.size() > 0) mslevel=samples[i]->scans[0]->mslevel;
+                        if  (samples[i]->scans.size() > 0) mslevel=samples[i]->scans[0]->mslevel();
 
 			EIC* chrom=NULL;
 
@@ -2257,21 +2257,21 @@ void EicWidget::addMS2Events(float mzmin, float mzmax)
     for (auto const& sample : samples) {
 		if (sample->ms1ScanCount() == 0) continue;
         for (auto const& scan : sample->scans) {
-            if (scan->mslevel == 2 &&
-				scan->precursorMz >= mzmin &&
-				scan->precursorMz <= mzmax) {
+            if (scan->mslevel() == 2 &&
+                scan->precursorMz() >= mzmin &&
+                scan->precursorMz() <= mzmax) {
 
                 mw->fragPanel->addScanItem(scan);
-                if (scan->rt < eicParameters->_slice.rtmin || 
-					scan->rt > eicParameters->_slice.rtmax) {
+                if (scan->rt() < eicParameters->_slice.rtmin ||
+                    scan->rt() > eicParameters->_slice.rtmax) {
 					continue;
 				}
 
         		QColor color = QColor::fromRgbF(sample->color[0],
 												sample->color[1],
 												sample->color[2],
-												1);
-                EicPoint* p  = new EicPoint(toX(scan->rt),
+                                                                                                1);
+                        EicPoint* p  = new EicPoint(toX(scan->rt()),
 											toY(10),
 											NULL,
 											getMainWindow());

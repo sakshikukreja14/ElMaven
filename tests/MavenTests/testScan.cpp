@@ -31,16 +31,16 @@ void TestScan::cleanup() {
 
 void TestScan::initScan(Scan* scan) {
 
-    scan->productMz=5.5;
-    scan->collisionEnergy=5.6;
-    scan->centroided=1;
+    scan->setProductMz(5.5);
+    scan->setCollisionEnergy(5.6);
+    scan->setCentroided(1);
     //scan->intensity.resize(4);
 
     float arr[8]={9.9,4.4,5.5,8.8,2.07,2.08,2.09,8.8};
     scan->intensity.assign(arr,arr+4);
     scan->mz.assign(arr+4,arr+8);
-    scan->scanType="testString1";
-    scan->filterLine="testString2";
+    scan->setScanType("testString1");
+    scan->setFilterLine("testString2");
 
 }
 
@@ -52,15 +52,15 @@ void TestScan::testdeepcopy() {
     Scan* scan1 = new Scan(sample1,3,4,5.0,6.0,-1);
     scan1->deepcopy(scan);
 
-    QVERIFY(scan->sample = scan1->sample);
-    QVERIFY(scan->rt = scan1->rt);
-    QVERIFY(scan->scannum = scan1->scannum);
-    QVERIFY(scan->precursorMz = scan1->precursorMz);
-    QVERIFY(scan->mslevel = scan1->mslevel);
-    QVERIFY(scan->polarity = scan1->polarity);
-    QVERIFY(scan->productMz= scan1->productMz);
-    QVERIFY(scan->collisionEnergy= scan1->collisionEnergy);
-    QVERIFY(scan->centroided= scan1->centroided);
+    QVERIFY(scan->sample() == scan1->sample());
+    QVERIFY(scan->rt() == scan1->rt());
+    QVERIFY(scan->scannum() == scan1->scannum());
+    QVERIFY(scan->precursorMz() == scan1->precursorMz());
+    QVERIFY(scan->mslevel() == scan1->mslevel());
+    QVERIFY(scan->getPolarity() == scan1->getPolarity());
+    QVERIFY(scan->productMz() == scan1->productMz());
+    QVERIFY(scan->collisionEnergy() == scan1->collisionEnergy());
+    QVERIFY(scan->isCentroided() == scan1->isCentroided());
     QVERIFY(scan->intensity[0] == scan1->intensity[0]);
     QVERIFY(scan->intensity[1] == scan1->intensity[1]);
     QVERIFY(scan->intensity[2] == scan1->intensity[2]);
@@ -71,12 +71,12 @@ void TestScan::testdeepcopy() {
     QVERIFY(scan->mz[3] == scan1->mz[3]);
 
     bool scanType=false;
-    if (scan->scanType.compare(scan1->scanType)==0)
+    if (scan->scanType().compare(scan1->scanType())==0)
         scanType=true;
     QVERIFY(scanType);
 
     bool filterLine=false;
-    if (scan->filterLine.compare(scan1->filterLine)==0)
+    if (scan->filterLine().compare(scan1->filterLine())==0)
         filterLine=true;
     QVERIFY(filterLine);
 
@@ -175,35 +175,6 @@ void TestScan::testhasMz() {
     QVERIFY(scan->hasMz(2.1,mavenparameters->massCutoffMerge));
     QVERIFY(!scan->hasMz(1.0,mavenparameters->massCutoffMerge));
     QVERIFY(!scan->hasMz(9,mavenparameters->massCutoffMerge));
-}
-
-void TestScan::testchargeSeries() {
-    Scan* scan=new Scan (sample,1,2,3.3,4.4,1);;
-    initScan (scan);
-    vector<float> chargeStates=scan->chargeSeries(4.1,3);
-    QVERIFY(TestUtils::floatCompare(chargeStates[0],0));
-    QVERIFY(TestUtils::floatCompare(chargeStates[1],10.2999992370605));
-    QVERIFY(TestUtils::floatCompare(chargeStates[2],5.64999961853027));
-    QVERIFY(TestUtils::floatCompare(chargeStates[3],4.09999990463257));
-    QVERIFY(TestUtils::floatCompare(chargeStates[4],3.32499980926514));
-    QVERIFY(TestUtils::floatCompare(chargeStates[5],2.85999989509583));
-    QVERIFY(TestUtils::floatCompare(chargeStates[6],2.54999995231628));
-    QVERIFY(TestUtils::floatCompare(chargeStates[7],2.32857131958008));
-    QVERIFY(TestUtils::floatCompare(chargeStates[8],2.16249990463257));
-    QVERIFY(TestUtils::floatCompare(chargeStates[9],2.03333330154419));
-    QVERIFY(TestUtils::floatCompare(chargeStates[10],1.92999994754791));
-    QVERIFY(TestUtils::floatCompare(chargeStates[11],1.845454454422));
-    QVERIFY(TestUtils::floatCompare(chargeStates[12],1.77499997615814));
-    QVERIFY(TestUtils::floatCompare(chargeStates[13],1.71538460254669));
-    QVERIFY(TestUtils::floatCompare(chargeStates[14],1.66428565979004));
-    QVERIFY(TestUtils::floatCompare(chargeStates[15],1.62000000476837));
-    QVERIFY(TestUtils::floatCompare(chargeStates[16],1.58124995231628));
-    QVERIFY(TestUtils::floatCompare(chargeStates[17],1.54705882072449));
-    QVERIFY(TestUtils::floatCompare(chargeStates[18],1.51666665077209));
-    QVERIFY(TestUtils::floatCompare(chargeStates[19],1.48947370052338));
-    QVERIFY(TestUtils::floatCompare(chargeStates[20],1.46499991416931));
-    QVERIFY(TestUtils::floatCompare(chargeStates[21],1.44285714626312));
-    QVERIFY(TestUtils::floatCompare(chargeStates[22],1.422727227211));
 }
 
 void TestScan::testdeconvolute() {

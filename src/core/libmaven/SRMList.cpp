@@ -24,7 +24,7 @@ vector<mzSlice*> SRMList::getSrmSlices(double amuQ1, double amuQ3, int userPolar
             // skipping empty scans
             if (scan->totalIntensity() == 0) continue;
 
-            QString filterLine(scan->filterLine.c_str());
+            QString filterLine(scan->filterLine().c_str());
 
             if (filterLine.isEmpty()) continue;
 
@@ -40,15 +40,15 @@ vector<mzSlice*> SRMList::getSrmSlices(double amuQ1, double amuQ3, int userPolar
 
         Scan* scan = seenMRMS.value(filterLine);
         mzSlice* s = new mzSlice(0,0,0,0);
-        s->srmId = scan->filterLine.c_str();
+        s->srmId = scan->filterLine().c_str();
         slices.push_back(s);
 
         if (associateCompoundNames) {
             //match compounds
             Compound* compound = NULL;
-            float precursorMz = scan->precursorMz;
-            float productMz   = scan->productMz;
-            float rt = scan->rt;
+            float precursorMz = scan->precursorMz();
+            float productMz   = scan->productMz();
+            float rt = scan->rt();
             int   polarity= scan->getPolarity();
             if (polarity==0) filterLine[0] == '+' ? polarity=1 : polarity =-1;
             if (userPolarity) polarity=userPolarity;  //user specified ionization mode

@@ -108,13 +108,13 @@ void TreeDockWidget::showInfo() {
                                         mainwindow->spectraDockWidget->raise();
                                     }
 
-                                    if (scan->mslevel == 2) {
+                                    if (scan->mslevel() == 2) {
                                         mainwindow->massCalcWidget->setFragmentationScan(scan);
                                         mainwindow->fragSpectraWidget->overlayScan(scan);
                                     }
 
                                     mainwindow->getSpectraWidget()->setScan(scan);
-                                    mainwindow->getEicWidget()->setFocusLine(scan->rt);
+                                    mainwindow->getEicWidget()->setFocusLine(scan->rt());
                                     // if (scan->mslevel > 1) {
                                     //  mainwindow->peptideFragmentation->setScan(scan);
                                     // }
@@ -306,13 +306,13 @@ void TreeDockWidget::addScanItem(Scan* scan) {
         if (scan == NULL) return;
         _scansList.append(scan);
 
-        QIcon icon = _mainWindow->projectDockWidget->getSampleIcon(scan->sample);
+        QIcon icon = _mainWindow->projectDockWidget->getSampleIcon(scan->sample());
 
         auto item = new NumericTreeWidgetItem(treeWidget, ScanType);
         item->setData(0, Qt::UserRole, QVariant::fromValue(scan));
-        item->setIcon(0, icon);	
-        item->setText(1, QString::number(scan->precursorMz, 'f', 4));	
-        item->setText(2, QString::number(scan->rt));
+        item->setIcon(0, icon);
+        item->setText(1, QString::number(scan->precursorMz(), 'f', 4));
+        item->setText(2, QString::number(scan->rt()));
         item->setText(3,QString::number(scan->getPrecursorPurity(20.00),'g',3));
         item->setText(4,QString::number(scan->totalIntensity(),'g',3));
         item->setText(5,QString::number(scan->nobs()));

@@ -76,11 +76,11 @@ void TestMzAligner::testObiWarp()
             vector<float> sampleNewRt;
             for(Peak peak: grp.peaks) {
                 if(peak.getSample()->sampleName == aligner.refSample->sampleName) {
-                    refSampleOriginalRt = peak.getScan()->originalRt;
+                    refSampleOriginalRt = peak.getScan()->originalRt();
                 }
                 else {
-                    sampleOriginalRt.push_back(peak.getScan()->originalRt);
-                    sampleNewRt.push_back(peak.getScan()->rt);
+                    sampleOriginalRt.push_back(peak.getScan()->originalRt());
+                    sampleNewRt.push_back(peak.getScan()->rt());
                 }
             }
             for(int rtCount=0; rtCount<sampleOriginalRt.size(); rtCount++) {

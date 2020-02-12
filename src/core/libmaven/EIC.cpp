@@ -1139,13 +1139,13 @@ bool EIC::makeEICSlice(mzSample *sample, float mzmin, float mzmax, float rtmin, 
         Scan *scan = *(scanItr);
         scanNum++;
 
-        if (!(scan->filterLine == filterline || filterline == ""))
+        if (!(scan->filterLine() == filterline || filterline == ""))
             continue;
-        if (scan->mslevel != mslevel)
+        if (scan->mslevel() != mslevel)
             continue;
-        if (scan->rt < rtmin)
+        if (scan->rt() < rtmin)
             continue;
-        if (scan->rt > rtmax)
+        if (scan->rt() > rtmax)
             break;
 
         eicMz = 0;
@@ -1217,13 +1217,13 @@ bool EIC::makeEICSlice(mzSample *sample, float mzmin, float mzmax, float rtmin, 
         }
 
         this->scannum.push_back(scanNum);
-        this->rt.push_back(scan->rt);
+        this->rt.push_back(scan->rt());
         this->intensity.push_back(eicIntensity);
         this->mz.push_back(eicMz);
         this->totalIntensity += eicIntensity;
         if (eicIntensity > this->maxIntensity) {
             this->maxIntensity = eicIntensity;
-            this->rtAtMaxIntensity = scan->rt;
+            this->rtAtMaxIntensity = scan->rt();
             this->mzAtMaxIntensity = eicMz;
         }
     }

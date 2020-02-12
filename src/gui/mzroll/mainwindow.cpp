@@ -1298,7 +1298,7 @@ void MainWindow::setFilterLine() {
             Scan* scan = sample->getScan(j);
             if (!scan) continue;
 
-            QString filterLine(scan->filterLine.c_str());
+            QString filterLine(scan->filterLine().c_str());
 
             if (filterLine.isEmpty())   continue;
 
@@ -2795,7 +2795,7 @@ void MainWindow::_updateEMDBProgressBar(int progress, int finish)
     if (progress == finish) {
         for (const auto sample : getSamples()) {
             for (const auto scan : sample->scans) {
-                if (scan->originalRt != scan->rt) {
+                if (scan->originalRt() != scan->rt()) {
                     samplesAlignedFlag = true;
                     break;
                 }
@@ -3503,9 +3503,9 @@ void MainWindow::UndoAlignment()
 	alignmentDialog->samplesAligned(false);
 	
 	for (auto sample : samples) {
-		for(auto scan : sample->scans)
-			if(scan->originalRt >= 0)
-				scan->rt = scan->originalRt;
+                for(auto scan : sample->scans)
+                    if(scan->originalRt() >= 0)
+                        scan->setRt( scan->originalRt());
 	}
 
 	getEicWidget()->replotForced();
@@ -3699,8 +3699,8 @@ void MainWindow::showFragmentationScans(float pmz)
             continue;
 
         for (auto scan : sample->scans) {
-	        if (scan->mslevel != 2) continue;
-	        if (massCutoffDist(scan->precursorMz,
+            if (scan->mslevel() != 2) continue;
+            if (massCutoffDist(scan->precursorMz(),
                                pmz,
                                massCutoff) > massCutoff->getMassCutoff()) {
                 continue;
@@ -4136,7 +4136,7 @@ void MainWindow::getLinks(Peak* peak) {
 	if (!scan)
 		return;
 
-	mzSample* sample = scan->getSample();
+        mzSample* sample = scan->sample();
 	if (!sample)
 		return;
 

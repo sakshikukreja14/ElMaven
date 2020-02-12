@@ -160,9 +160,9 @@ vector<mzLink> Peak::findCovariants() {
     for(unsigned int i=0; i<sample->scans.size(); i++ ) {
         Scan* _scan = sample->scans[i];
         if(_scan == NULL ) continue;
-        if(_scan->mslevel != 1) continue;
-        if(_scan->rt < rt-0.1) continue;
-        if(_scan->rt > rt+0.1) break;
+        if(_scan->mslevel() != 1) continue;
+        if(_scan->rt() < rt-0.1) continue;
+        if(_scan->rt() > rt+0.1) break;
         scans.push_back(_scan);
     }
     if ( scans.size() == 0 ) return covariants;

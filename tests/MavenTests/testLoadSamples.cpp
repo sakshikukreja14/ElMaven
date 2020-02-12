@@ -59,25 +59,25 @@ void TestLoadSamples:: testScanParsing() {
     mzsample.parseMzXML(loadFile);
     Scan* scan = mzsample.getScan(scanNum);
 
-    QVERIFY(scan->rt == rt);
+    QVERIFY(scan->rt() == rt);
 
-    QVERIFY(scan->scannum == scannum);
+    QVERIFY(scan->scannum() == scannum);
 
-    QVERIFY(scan->mslevel == msLevel);
+    QVERIFY(scan->mslevel() == msLevel);
 
-    QVERIFY(scan->polarity == polarity);
+    QVERIFY(scan->getPolarity() == polarity);
 
-    QVERIFY(scan->precursorMz == precursorMz);
+    QVERIFY(scan->precursorMz() == precursorMz);
 
-    QVERIFY(scan->productMz == basePeakMz);
+    QVERIFY(scan->productMz() == basePeakMz);
 
-    QVERIFY(scan->collisionEnergy == collisionEnergy);
+    QVERIFY(scan->collisionEnergy() == collisionEnergy);
 
-    QVERIFY(scan->centroided == centroided);
+    QVERIFY(scan->isCentroided() == centroided);
 
-    QVERIFY(scan->filterLine == filterLine);
+    QVERIFY(scan->filterLine() == filterLine);
 
-    QVERIFY(scan->scanType == scanType);
+    QVERIFY(scan->scanType() == scanType);
 
     QVERIFY(scan->mz.size() == peakCount);
 

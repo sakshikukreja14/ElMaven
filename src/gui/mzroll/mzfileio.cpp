@@ -355,8 +355,8 @@ mzSample* mzFileIO::parseMzData(QString fileName) {
                     QString _value = xml.attributes().value("value").toString();
                    //qDebug() << _name << "->" << _value;
 
-                    if(_name.contains("TimeInMinutes",Qt::CaseInsensitive))  currentScan->rt = _value.toFloat();
-                    else if(_name.contains("time in seconds",Qt::CaseInsensitive))  currentScan->rt = _value.toFloat();
+                    if(_name.contains("TimeInMinutes",Qt::CaseInsensitive))  currentScan->setRt (_value.toFloat());
+                    else if(_name.contains("time in seconds",Qt::CaseInsensitive))  currentScan->setRt(_value.toFloat());
                     else if(_name.contains("Polarity",Qt::CaseInsensitive)) {
                         if ( _value[0] == 'p' || _value[0] == 'P') {
                             currentScan->setPolarity(+1);
@@ -366,16 +366,16 @@ mzSample* mzFileIO::parseMzData(QString fileName) {
                     }
 
                     if (_name.contains("MassToChargeRatio",Qt::CaseInsensitive)) {
-                        currentScan->precursorMz = _value.toFloat();
+                        currentScan->setPrecursorMz (_value.toFloat());
                     }
 
                     if (_name.contains("CollisionEnergy",Qt::CaseInsensitive)) {
-                        currentScan->collisionEnergy = _value.toFloat();
+                        currentScan->setCollisionEnergy (_value.toFloat());
                     }
 
                 } else if (xml.name() == "spectrumInstrument" && currentScan) {
-                    currentScan->mslevel = xml.attributes().value("msLevel").toString().toInt();
-                    if (currentScan->mslevel <= 0 ) currentScan->mslevel=1;
+                    currentScan->setMslevel(xml.attributes().value("msLevel").toString().toInt());
+                    if (currentScan->mslevel() <= 0 ) currentScan->setMslevel(1);
                  } else if (xml.name() == "data" && taglist.size() >= 2 && currentScan) {
                      int precision = xml.attributes().value("precision").toString().toInt();
 

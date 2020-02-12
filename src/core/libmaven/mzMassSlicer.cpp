@@ -50,14 +50,14 @@ void MassSlices::algorithmA() {
             Scan* scan = samples[i]->scans[j];
 
             // Check if filterLine(SRM transition for MS-MS, segment for LC-MS) for the scan is empty
-            if ( scan->filterLine.empty() ) continue;
+            if ( scan->filterLine().empty() ) continue;
 
-            if ( seen.count( scan->filterLine ) ) continue;
+            if ( seen.count( scan->filterLine() ) ) continue;
 
             //Create new slice for every filterLine
-            mzSlice* s = new mzSlice(scan->filterLine);
+            mzSlice* s = new mzSlice(scan->filterLine());
             slices.push_back(s);
-            seen[ scan->filterLine ]=1;
+            seen[ scan->filterLine() ]=1;
         }
     }
     cerr << "#algorithmA" << slices.size() << endl;
@@ -135,14 +135,14 @@ void MassSlices::algorithmB(MassCutoff* massCutoff, int rtStep )
 
             currentScans++;
 
-            if (scan->mslevel != 1)
+            if (scan->mslevel() != 1)
                 continue;
 
             // Checking if RT is in the given min to max RT range
-            if (_maxRt && !isBetweenInclusive(scan->rt, _minRt, _maxRt))
+            if (_maxRt && !isBetweenInclusive(scan->rt(), _minRt, _maxRt))
                 continue;
 
-            float rt = scan->rt;
+            float rt = scan->rt();
 
             for (unsigned int k = 0; k < scan->nobs(); k++) {
                 float mz = scan->mz[k];
@@ -167,7 +167,7 @@ void MassSlices::algorithmB(MassCutoff* massCutoff, int rtStep )
                                          rt - rtWindow,
                                          rt + rtWindow);
                 s->ionCount = intensity;
-                s->rt = scan->rt;
+                s->rt = scan->rt();
                 s->mz = mz;
                 slices.push_back(s);
             }
@@ -221,19 +221,19 @@ void MassSlices::algorithmC(float ppm, float minIntensity, float rtWindow) {
         mzSample* s = samples[i];
         for(unsigned int j=0; j < s->scans.size(); j++) {
             Scan* scan = samples[i]->scans[j];
-            if (scan->mslevel != 1 ) continue;
+            if (scan->mslevel() != 1 ) continue;
             vector<int> positions = scan->intensityOrderDesc();
             for(unsigned int k=0; k< positions.size() && k<10; k++ ) {
                 int pos = positions[k];
                 if (scan->intensity[pos] < minIntensity) continue;
-                float rt = scan->rt;
+                float rt = scan->rt();
                 float mz = scan->mz[ pos ];
                 float mzmax = mz + mz/1e6*ppm;
                 float mzmin = mz - mz/1e6*ppm;
                 if(! sliceExists(mzmin, mzmax, rt-2*rtWindow, rt+2*rtWindow) ) {
                     mzSlice* s = new mzSlice(mzmin,mzmax, rt-2*rtWindow, rt+2*rtWindow);
                     s->ionCount = scan->intensity[pos];
-                    s->rt=scan->rt;
+                    s->rt=scan->rt();
                     s->mz=mz;
                     slices.push_back(s);
                     int mzRange = mz*10;

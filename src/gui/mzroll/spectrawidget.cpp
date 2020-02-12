@@ -99,7 +99,7 @@ void SpectraWidget::setCurrentScan(Scan* scan)
         _currentScan->deepcopy(scan);
         _scanset.clear();
 
-        if (scan->mslevel == 1) {
+        if (scan->mslevel() == 1) {
             chargeStates=_currentScan->assignCharges(mainwindow->getUserMassCutoff());
         }
     }
@@ -118,7 +118,7 @@ void SpectraWidget::_placeLabels()
     QString lowerLabelText = tr("<b>Reference Spectra</b>");
     if (_overlayMode == OverlayMode::Raw)
         upperLabelText = tr("<b>Raw Spectra (Rt: %1)</b>")
-                             .arg(QString::number(_currentScan->rt, 'f', 2));
+                             .arg(QString::number(_currentScan->rt(), 'f', 2));
 
     QFont font = QApplication::font();
     if (!_upperLabel) {
@@ -185,7 +185,7 @@ void SpectraWidget::setScan(Scan* scan)
 void SpectraWidget::setScan(Scan* scan, float mzmin, float mzmax)
 {
     if ( scan == NULL ) return;
-    cerr << "SpectraWidget::setScan(scan,min,max) : " << scan->scannum << endl;
+    cerr << "SpectraWidget::setScan(scan,min,max) : " << scan->scannum() << endl;
     setCurrentScan(scan);
     _minX = mzmin;
     _maxX = mzmax;
@@ -199,7 +199,7 @@ void SpectraWidget::setScan(mzSample* sample, int scanNum=-1)
 {
     if (!sample) return;
     if (sample->scans.size() == 0 ) return;
-    if (_currentScan && scanNum < 0 ) scanNum = _currentScan->scannum;
+    if (_currentScan && scanNum < 0 ) scanNum = _currentScan->scannum();
     if (scanNum > sample->scans.size() ) scanNum = sample->scans.size()-1;
 
     if ( scanNum >= 0 && scanNum < sample->scans.size() ) {
@@ -319,7 +319,7 @@ void SpectraWidget::overlayCompoundFragmentation(Compound* c)
 
     cerr << "SpectraWidge::overlayCompoundfragmentation(Compound)" << c->name << " " << c->precursorMz << endl;
 
-    if (_currentScan && _currentScan->mslevel == 2) {
+    if (_currentScan && _currentScan->mslevel() == 2) {
         _showOverlay = true;
         overlaySpectralHit(_spectralHit);
         resetZoom();
@@ -355,7 +355,7 @@ void SpectraWidget::overlaySpectralHit(SpectralHit& hit)
 
 void SpectraWidget::overlayScan(Scan *scan)
 {
-    if (_overlayMode == OverlayMode::None || scan->mslevel != 2)
+    if (_overlayMode == OverlayMode::None || scan->mslevel() != 2)
         return;
 
     _overlayMode = OverlayMode::Raw;
@@ -471,36 +471,36 @@ void SpectraWidget::setScanTitle()
     }
 
     QString sampleName("");
-    if (_currentScan->sample)  sampleName = QString(_currentScan->sample->sampleName.c_str());
+    if (_currentScan->sample())  sampleName = QString(_currentScan->sample()->sampleName.c_str());
     
-    if (_currentScan->scannum)
-        _titleText += tr("<b>Scan#</b> %1  ").arg(QString::number(_currentScan->scannum));
+    if (_currentScan->scannum())
+        _titleText += tr("<b>Scan#</b> %1  ").arg(QString::number(_currentScan->scannum()));
 
-    if (_currentScan->rt)
-        _titleText += tr("<b>Rt:</b> %1  ").arg(QString::number(_currentScan->rt, 'f', 2));
+    if (_currentScan->rt())
+        _titleText += tr("<b>Rt:</b> %1  ").arg(QString::number(_currentScan->rt(), 'f', 2));
 
-    if (_currentScan->mslevel)
-        _titleText += tr("<b>MS Level:</b> %1  ").arg(QString::number(_currentScan->mslevel));
+    if (_currentScan->mslevel())
+        _titleText += tr("<b>MS Level:</b> %1  ").arg(QString::number(_currentScan->mslevel()));
 
-    if (_currentScan->precursorMz) {
-        _titleText += tr("<b>Pre m/z:</b> %1  ").arg(QString::number(_currentScan->precursorMz,'f',4));
+    if (_currentScan->precursorMz()) {
+        _titleText += tr("<b>Pre m/z:</b> %1  ").arg(QString::number(_currentScan->precursorMz(),'f',4));
     }
 
-    if (_currentScan->collisionEnergy) {
-        _titleText += tr("<b>CE:</b> %1  ").arg(QString::number(_currentScan->collisionEnergy,'f',0));
+    if (_currentScan->collisionEnergy()) {
+        _titleText += tr("<b>CE:</b> %1  ").arg(QString::number(_currentScan->collisionEnergy(),'f',0));
     }
 
-    if (_currentScan->productMz) {    
-       _titleText += tr("<b>Prod m/z:</b> %1  ").arg(QString::number(_currentScan->productMz,'f',3));
+    if (_currentScan->productMz()) {
+        _titleText += tr("<b>Prod m/z:</b> %1  ").arg(QString::number(_currentScan->productMz(),'f',3));
     }
 
-    if (_currentScan->precursorMz > 0) {
+    if (_currentScan->precursorMz() > 0) {
         //TODO: Use masscutoff set by user
 		double purity = _currentScan->getPrecursorPurity(10.0) * 100.0;
         _titleText += tr("<b>Purity:</b> %1  ").arg(QString::number(purity,
                                                                'f',
                                                                1));
-        _titleText += tr("<b>Isolation Window:</b> %1  ").arg(QString::number(_currentScan->isolationWindow,
+        _titleText += tr("<b>Isolation Window:</b> %1  ").arg(QString::number(_currentScan->isolationWindow(),
                                                                 'f',
                                                                 1));
     }
@@ -618,8 +618,8 @@ void SpectraWidget::drawScanSet(vector<Scan*>& scanset) {
     for (unsigned int i=0; i < scanset.size(); i++ ) {
 
         QColor sampleColor(Qt::gray);
-        if (scanset[i]->sample) {
-            mzSample* sample = scanset[i]->sample;
+        if (scanset[i]->sample()) {
+            mzSample* sample = scanset[i]->sample();
             sampleColor = QColor::fromRgbF( sample->color[0], sample->color[1], sample->color[2], 0.6 );
         }
         drawScan(scanset[i],sampleColor);
@@ -706,8 +706,8 @@ void SpectraWidget::drawGraph()
     qDebug() << "showSpectra() mzrange= " << _minX << "-" << _maxX;
 
     QColor sampleColor(Qt::black);
-    if (_currentScan->sample) {
-        mzSample* sample = _currentScan->sample;
+    if (_currentScan->sample()) {
+        mzSample* sample = _currentScan->sample();
         sampleColor = QColor::fromRgbF( sample->color[0], sample->color[1], sample->color[2], 1 );
     }
 
@@ -718,14 +718,14 @@ void SpectraWidget::drawGraph()
     if (_spectralHit.mzList.size() > 0) {
         setGroupTitle();
         _placeLabels();
-        if (fabs(_spectralHit.precursorMz - _currentScan->precursorMz) < 0.1f)
+        if (fabs(_spectralHit.precursorMz - _currentScan->precursorMz()) < 0.1f)
             drawSpectralHit(_spectralHit);
         else {
             //TODO: either remove the check or inform user on the UI in case of failure
             qDebug() << " overlaySpectra() skipped: "
                      << _spectralHit.precursorMz
                      << " "
-                     << _currentScan->precursorMz;
+                     << _currentScan->precursorMz();
         }
     } else
         setScanTitle();
@@ -744,7 +744,7 @@ void SpectraWidget::findBounds(bool checkX, bool checkY)
 
     // TODO: similarly size of `_spectralHit->mzList` can also be checked here
     if (_currentScan->mz.size() == 0) {
-        qDebug() << "Empty scan: " << _currentScan->scannum << endl;
+        qDebug() << "Empty scan: " << _currentScan->scannum() << endl;
         return;
     }
 
@@ -767,7 +767,7 @@ void SpectraWidget::findBounds(bool checkX, bool checkY)
     minMZ -= 20;
     maxMZ += 20;
 
-    cerr << _currentScan->filterLine << " " << _currentScan->nobs() << endl;
+    cerr << _currentScan->filterLine() << " " << _currentScan->nobs() << endl;
     cerr << "findBounds(): range [" << minMZ << ", " << maxMZ << "]" << endl;
 
     if (_minX < minMZ)
@@ -829,25 +829,25 @@ void SpectraWidget::incrementScan(int increment, int msLevel=0 )
 {
     // increment only for non-overlay spectra having a scan for a sample
     if (_currentScan == NULL
-        || _currentScan->sample == NULL
+        || _currentScan->sample() == NULL
         || _overlayMode != OverlayMode::None) {
         return;
     }
 
-	mzSample* sample = _currentScan->getSample();
+        mzSample* sample = _currentScan->sample();
     if (sample == NULL) return;
 
-	Scan* newScan=sample->getScan(_currentScan->scannum+increment);
-    if (msLevel != 0 && newScan && newScan->mslevel != msLevel ) {
-        for(unsigned int i=newScan->scannum; i >= 0 && i< sample->scans.size(); i+=increment ) {
+    Scan* newScan=sample->getScan(_currentScan->scannum()+increment);
+    if (msLevel != 0 && newScan && newScan->mslevel() != msLevel ) {
+        for(unsigned int i=newScan->scannum(); i >= 0 && i< sample->scans.size(); i+=increment ) {
             newScan =sample->getScan(i);
-            if ( newScan && newScan->mslevel==msLevel) break;
+            if ( newScan && newScan->mslevel() ==msLevel) break;
         }
     }
     if(newScan==NULL) return;
 
     //do not reset soom when moving between full scans
-	if(newScan->mslevel == 1 && _currentScan->mslevel == 1) {
+    if(newScan->mslevel() == 1 && _currentScan->mslevel() == 1) {
 		setScan(newScan,_minX,_maxX);
     }  else {
         setScan(newScan);
@@ -960,7 +960,7 @@ void SpectraWidget::setMzFocus(float mz)
 
 	MassCutoff *massCutoff= mainwindow->getUserMassCutoff();
 
-	if (_currentScan->mslevel == 1) {
+        if (_currentScan->mslevel() == 1) {
 		int pos = _currentScan->findHighestIntensityPos(mz, massCutoff);
 		if(pos >= 0) { 
 			float bestMz = _currentScan->mz[pos];
@@ -968,20 +968,20 @@ void SpectraWidget::setMzFocus(float mz)
 			mainwindow->massCalcWidget->setMass(bestMz);
 		}
 
-	} else if (_currentScan->mslevel == 2 && _currentScan->precursorMz > 0) {
-			float bestMz = _currentScan->precursorMz;
+        } else if (_currentScan->mslevel() == 2 && _currentScan->precursorMz() > 0) {
+            float bestMz = _currentScan->precursorMz();
 			mainwindow->setMzValue(bestMz);
 			mainwindow->massCalcWidget->setMass(bestMz);
 
-	} else if (!_currentScan->filterLine.empty()) {
+        } else if (!_currentScan->filterLine().empty()) {
 		float mzmin = mz - massCutoff->massCutoffValue(mz);
 		float mzmax = mz + massCutoff->massCutoffValue(mz);
     	mzSlice eicSlice = mainwindow->getEicWidget()->getParameters()->getMzSlice();
-        mzSlice slice(mzmin, mzmax, eicSlice.rtmin, eicSlice.rtmax); 
-		slice.srmId =_currentScan->filterLine;
+        mzSlice slice(mzmin, mzmax, eicSlice.rtmin, eicSlice.rtmax);
+        slice.srmId =_currentScan->filterLine();
 
         mainwindow->getEicWidget()->setMzSlice(slice);
-		mainwindow->getEicWidget()->setFocusLine(_currentScan->rt);
+        mainwindow->getEicWidget()->setFocusLine(_currentScan->rt());
         mainwindow->getEicWidget()->replotForced();
         return;
     }
@@ -1304,17 +1304,17 @@ void SpectraWidget::spectraToClipboardTop()
 }
 
 void SpectraWidget::gotoScan()
-{ 
-        if (_currentScan == NULL or _currentScan->sample == NULL) return;
-		int curScanNum = _currentScan->scannum;
-		int maxScanNum = _currentScan->sample->scans.size()-1;
+{
+    if (_currentScan == NULL or _currentScan->sample() == NULL) return;
+    int curScanNum = _currentScan->scannum();
+    int maxScanNum = _currentScan->sample()->scans.size()-1;
 		bool ok=false;
 
 		int scanNumber = QInputDialog::getInt (this,
 						"Go To Scan Number", "Enter Scan Number", curScanNum,
 						0, maxScanNum, 1, &ok, 0);
-		if (ok && scanNumber > 0 && scanNumber < maxScanNum) {
-			Scan* newscan = _currentScan->sample->scans[scanNumber];
+                if (ok && scanNumber > 0 && scanNumber < maxScanNum) {
+                    Scan* newscan = _currentScan->sample()->scans[scanNumber];
 			if (newscan) setScan(newscan);
 		}
 }
@@ -1402,9 +1402,9 @@ void SpectraWidget::constructAverageScan(float rtmin, float rtmax)
     if (_avgScan != NULL) delete(_avgScan);
     _avgScan=NULL;
 
-    if (_currentScan && _currentScan->getSample()) {
-        Scan* avgScan = _currentScan->getSample()->getAverageScan(rtmin,rtmax,_currentScan->mslevel,_currentScan->getPolarity(),(float)100.0);
-        qDebug() << "constructAverageScan() " << rtmin << " " << rtmax << " mslevel=" << _currentScan->mslevel << endl;
+    if (_currentScan && _currentScan->sample()) {
+        Scan* avgScan = _currentScan->sample()->getAverageScan(rtmin,rtmax,_currentScan->mslevel(),_currentScan->getPolarity(),(float)100.0);
+        qDebug() << "constructAverageScan() " << rtmin << " " << rtmax << " mslevel=" << _currentScan->mslevel() << endl;
         avgScan->simpleCentroid();
         if(avgScan) setScan(avgScan);
     }
@@ -1424,7 +1424,7 @@ void SpectraWidget::findSimilarScans()
     }
 
     mainwindow->spectraMatchingForm->fragmentsText->setPlainText(clipboardText.join("\n"));
-    mainwindow->spectraMatchingForm->precursorMz->setText(QString::number(_currentScan->precursorMz,'f',6));
+    mainwindow->spectraMatchingForm->precursorMz->setText(QString::number(_currentScan->precursorMz(),'f',6));
     mainwindow->spectraMatchingForm->show();
 }
 

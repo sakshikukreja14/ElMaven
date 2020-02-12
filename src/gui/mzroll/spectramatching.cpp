@@ -173,7 +173,7 @@ void SpectraMatching::doSearch() {
 
         item->setData(0,Qt::UserRole,QVariant::fromValue(i));
         item->setText(0,QString::number(hit.score,'f',2));
-        item->setText(1,QString::number(hit.scan->scannum));
+        item->setText(1,QString::number(hit.scan->scannum()));
         item->setText(2,QString::number(hit.precursorMz,'f',4));
         item->setText(3,QString::number(hit.matchCount));
 
@@ -224,8 +224,8 @@ void SpectraMatching::addHit(double score, float precursormz, QString samplename
 
 double SpectraMatching::scoreScan(Scan* scan) {
 
-    if (_msScanType  > 0 && scan->mslevel != _msScanType) return 0;
-    if (_precursorMz > 0 && mzUtils::massCutoffDist(_precursorMz,(double)scan->precursorMz,_precursorMassCutoff) > _precursorMassCutoff->getMassCutoff()) return 0;
+    if (_msScanType  > 0 && scan->mslevel() != _msScanType) return 0;
+    if (_precursorMz > 0 && mzUtils::massCutoffDist(_precursorMz,(double)scan->precursorMz(),_precursorMassCutoff) > _precursorMassCutoff->getMassCutoff()) return 0;
 
    float score=0;
    int matchCount=0;
@@ -259,7 +259,7 @@ double SpectraMatching::scoreScan(Scan* scan) {
    if(Nc) score=mzUtils::correlation(x.toStdVector(),y.toStdVector());
 
    if (score > 0 and matchCount > minMatches ) {
-       QString sampleName(scan->sample->sampleName.c_str());
+       QString sampleName(scan->sample()->sampleName.c_str());
        float precursorMz = _mzsList[0];
        addHit(score,precursorMz,sampleName,matchCount,scan,_mzsList,_intensityList);
    }
@@ -268,7 +268,7 @@ double SpectraMatching::scoreScan(Scan* scan) {
 
 double SpectraMatching::matchPattern(Scan* scan) {
 
-   if (_msScanType  > 0 && scan->mslevel != _msScanType) return 0;
+    if (_msScanType  > 0 && scan->mslevel() != _msScanType) return 0;
    int minMatches = minPeakMatches->value();
 
    //convert mzs to deltaMasses
@@ -362,7 +362,7 @@ double SpectraMatching::matchPattern(Scan* scan) {
        if(matchCount >= minMatches and scoreN > 0 ) {
            hitCount++;
            //    cerr << "i=" << i << "startMz=" << startMz << " maxObservedIntensity=" << maxObservedIntensity << endl;
-           QString sampleName(scan->sample->sampleName.c_str());
+           QString sampleName(scan->sample()->sampleName.c_str());
            float precursorMz = patternMzsObserved[0];
            addHit(scoreN,precursorMz,sampleName,matchCount,scan,patternMzsObserved,patternItensityObserved);
            /* for(int k=0; k < N; k++ ) {
@@ -415,7 +415,7 @@ void SpectraMatching::exportMatches() {
 	    stream << QString::number(hit.score,'f',2)   << "\t"
                << hit.precursorMz << "\t"
                << hit.sampleName << "\t"
-               << QString::number(hit.scan->scannum) << "\t"
+                   << QString::number(hit.scan->scannum()) << "\t"
 	    	   << QString::number(hit.matchCount)    << "\t"
 	    	   << intsString  << "\t"
 	    	   << mzString << "\n";

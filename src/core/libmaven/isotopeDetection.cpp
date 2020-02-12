@@ -247,15 +247,15 @@ std::pair<float, float> IsotopeDetection::getIntensity(Scan* scan, float mzmin, 
 {
     float highestIntensity = 0;
     float rt = 0;
-    mzSample* sample = scan->getSample();
+    mzSample* sample = scan->sample();
 
-    for (int i = scan->scannum - 2; i < scan->scannum + 2; i++) {
+    for (int i = scan->scannum() - 2; i < scan->scannum() + 2; i++) {
         Scan* s = sample->getScan(i);
 
         // Filter out MS2 scans when obtaining isotope peak intensities.
         auto pos = i;
-        while(s->mslevel > 1 && i < scan->scannum) {
-            auto index = i < scan->scannum ? --pos
+        while(s->mslevel() > 1 && i < scan->scannum()) {
+            auto index = i < scan->scannum() ? --pos
                                            : ++pos;
             s = sample->getScan(index);
         }
@@ -264,7 +264,7 @@ std::pair<float, float> IsotopeDetection::getIntensity(Scan* scan, float mzmin, 
         for (auto pos : matches) {
             if (s->intensity[pos] > highestIntensity) {
                 highestIntensity = s->intensity[pos];
-                rt = s->rt;
+                rt = s->rt();
             }
         }
     }

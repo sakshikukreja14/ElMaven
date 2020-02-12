@@ -149,15 +149,15 @@ void EicPoint::hoverEnterEvent (QGraphicsSceneHoverEvent*) {
 		 */
 	} 
     if (_scan) {
-        auto sample = _scan->getSample();
+        auto sample = _scan->sample();
         QString sampleNumber =
             sample->sampleNumber != -1 ? QString::number(sample->sampleNumber)
                                        : "NA";
-		setToolTip( "<b>  Sample: </b>"   + QString( _scan->sample->sampleName.c_str() ) +
-					"<br> <b>FilterLine: </b>" + 		  QString(_scan->filterLine.c_str() ) + 
-					"<br> <b>Scan#: </b>" +   QString::number(_scan->scannum) +
+		setToolTip( "<b>  Sample: </b>"   + QString( _scan->sample()->sampleName.c_str() ) +
+					"<br> <b>FilterLine: </b>" + 		  QString(_scan->filterLine().c_str() ) + 
+					"<br> <b>Scan#: </b>" +   QString::number(_scan->scannum()) +
                     "<br> <b>sample number: </b>" + sampleNumber +
-					"<br> <b>PrecursorMz: </b>" +   QString::number(_scan->precursorMz, 'f', 2 )
+					"<br> <b>PrecursorMz: </b>" +   QString::number(_scan->precursorMz(), 'f', 2 )
 		);
 	}
 
@@ -247,8 +247,8 @@ void EicPoint::_updateWidgetsForScan(MainWindow* mw, Scan* scan)
             mw->fragSpectraDockWidget->raise();
             mw->fragSpectraWidget->overlayScan(scan);
         }
-        if(scan->mslevel == 2)
-            mw->spectralHitsDockWidget->limitPrecursorMz(scan->precursorMz);
+        if(scan->mslevel() == 2)
+            mw->spectralHitsDockWidget->limitPrecursorMz(scan->precursorMz());
     }
 }
 

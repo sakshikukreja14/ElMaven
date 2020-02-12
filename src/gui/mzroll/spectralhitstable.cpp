@@ -932,7 +932,7 @@ void SpectralHitsDockWidget::getRetentionTimes() {
         Scan* scan = sample->getScan(hit->scannum);
         if (scan) {
            // qDebug() << hit->sampleName << " " << hit->scan << " rt=" << scan->rt;
-            hit->rt = scan->rt;
+           hit->rt = scan->rt();
             hit->scan  = scan;
         }
     }

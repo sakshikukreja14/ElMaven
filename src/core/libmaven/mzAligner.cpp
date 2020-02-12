@@ -79,8 +79,8 @@ void Aligner::saveFit() {
 	fit.resize(samples.size());
 	for(unsigned int i=0; i < samples.size(); i++ ) {
 		fit[i].resize(samples[i]->scans.size());
-		for(unsigned int ii=0; ii < samples[i]->scans.size(); ii++ ) {
-			fit[i][ii]=samples[i]->scans[ii]->rt;
+                for(unsigned int ii=0; ii < samples[i]->scans.size(); ii++ ) {
+                    fit[i][ii]=samples[i]->scans[ii]->rt();
 		}
 	}
 }
@@ -88,8 +88,8 @@ void Aligner::saveFit() {
 void Aligner::restoreFit() {
 	cerr << "restoreFit() " << endl;
 	for(unsigned int i=0; i < samples.size(); i++ ) {
-		for(unsigned int ii=0; ii < samples[i]->scans.size(); ii++ ) {
-			samples[i]->scans[ii]->rt = fit[i][ii];
+                for(unsigned int ii=0; ii < samples[i]->scans.size(); ii++ ) {
+                    samples[i]->scans[ii]->setRt (fit[i][ii]);
 		}
 	}
 }
@@ -152,14 +152,14 @@ void Aligner::PolyFit(int poly_align_degree) {
 
                 bool failedTransformation=false;
                 for(unsigned int ii=0; ii < sample->scans.size(); ii++ ) {
-                    double newrt =  stats->predict(sample->scans[ii]->rt);
+                    double newrt =  stats->predict(sample->scans[ii]->rt());
                     if (std::isnan(newrt) || std::isinf(newrt))  failedTransformation = true;
                     break;
                 }
 
                 if (!failedTransformation) {
                     for(unsigned int ii=0; ii < sample->scans.size(); ii++ ) {
-                        sample->scans[ii]->rt = stats->predict(sample->scans[ii]->rt);
+                        sample->scans[ii]->setRt (stats->predict(sample->scans[ii]->rt()));
                     }
 
                     for(unsigned int ii=0; ii < allgroups.size(); ii++ ) {
@@ -281,11 +281,11 @@ void Aligner::Fit(int ideg) {
             // cerr << "zeroOffset=" << zeroOffset << endl;
             for(unsigned int ii=0; ii < sample->scans.size(); ii++ ) {
                 //float newrt = seval(n, sample->scans[ii]->rt, x, ref, b, c, d);
-                double newrt =  leasev(result, ideg, sample->scans[ii]->rt)-zeroOffset;
+                double newrt =  leasev(result, ideg, sample->scans[ii]->rt())-zeroOffset;
                 if (!std::isnan(newrt) && !std::isinf(newrt)) { //nan check
-                    sample->scans[ii]->rt = newrt;
+                    sample->scans[ii]->setRt (newrt);
                 } else {
-                    cerr << "error: " << sample->scans[ii]->rt << " " << newrt << endl;
+                    cerr << "error: " << sample->scans[ii]->rt() << " " << newrt << endl;
                     failedTransformation++;
                 }
             }
@@ -341,8 +341,8 @@ bool Aligner::alignSampleRts(mzSample* sample,
     int intervalCounter = 0;
     for(auto scan: sample->scans) {
         if (mp->stop) return (true);
-        if (scan->mslevel == 1 && (intervalCounter % rtBinSize == 0 || scan == sample->scans.back())) {
-            rtPoints.push_back(scan->originalRt);
+        if (scan->mslevel() == 1 && (intervalCounter % rtBinSize == 0 || scan == sample->scans.back())) {
+            rtPoints.push_back(scan->originalRt());
             mxn.push_back(vector<float> (mzPoints.size()));
         }
         ++intervalCounter;
@@ -351,7 +351,7 @@ bool Aligner::alignSampleRts(mzSample* sample,
     intervalCounter = 0;
     int mxnCount = 0;
     for(auto scan: sample->scans) {
-        if (scan->mslevel == 1 && (intervalCounter % rtBinSize == 0 || scan == sample->scans.back())) {
+        if (scan->mslevel() == 1 && (intervalCounter % rtBinSize == 0 || scan == sample->scans.back())) {
             mxnCount++;
             for(int i = 0; i <  scan->mz.size(); i++) {
                 if (mp->stop) return (true);
@@ -436,7 +436,7 @@ bool Aligner::alignWithObiWarp(vector<mzSample*> samples,
 
     for(const auto scan: refSample->scans) {
         // PRM/DDA data have both mslevel 1 and mslevel 2 scans. We only want to align mslevel 1 scans
-        if(scan->mslevel == 1) {
+        if(scan->mslevel() == 1) {
             for(const auto mz: scan->mz) {
                 minMzRange = min(minMzRange, mz);
                 maxMzRange = max(maxMzRange, mz);
@@ -529,21 +529,21 @@ void Aligner::performSegmentedAlignment()
         for (auto scan : sample->scans) {
             AlignmentSegment* seg = nullptr;
             for (auto segment : _alignmentSegments[sampleName]) {
-                if (scan->rt >= segment.segStart
-                    && scan->rt <= segment.segEnd) {
+                if (scan->rt() >= segment.segStart
+                    && scan->rt() <= segment.segEnd) {
                     seg = &segment;
                     break;
                 }
             }
 
             if (seg) {
-                double newRt = seg->updateRt(scan->rt);
-                scan->rt = newRt;
+                double newRt = seg->updateRt(scan->rt());
+                scan->setRt(newRt);
             } else {
                 cerr << "Cannot find segment for: "
                      << sampleName
                      << "\t"
-                     << scan->rt
+                     << scan->rt()
                      << endl;
             }
         }

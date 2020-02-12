@@ -196,7 +196,7 @@ bool PeakGroup::isMS1()
     Peak peak = peaks[0];
     if (peak.getSample()) {
         Scan* scan = peak.getSample()->getScan(peak.scan);
-        if (scan && scan->mslevel == 1)
+        if (scan && scan->mslevel() == 1)
             return true;
     }
 
@@ -815,7 +815,7 @@ vector<Scan*> PeakGroup::getRepresentativeFullScans() {
         mzSample* sample = peaks[i].getSample();
         if ( sample == NULL ) continue;
         Scan* scan = sample->getScan(peaks[i].scan);
-        if (scan and scan->mslevel == 1) matchedscans.push_back(scan);
+        if (scan and scan->mslevel() == 1) matchedscans.push_back(scan);
     }
     return matchedscans;
 }
@@ -874,8 +874,8 @@ Scan* PeakGroup::getAverageFragmentationScan(float productPpmTolr)
         avgScan->intensity.push_back(fragmentationPattern.intensityValues[i]);
     }
 
-    avgScan->precursorMz = meanMz;
-    avgScan->rt = meanRt;
+    avgScan->setPrecursorMz (meanMz);
+    avgScan->setRt(meanRt);
     
     return avgScan;
 }

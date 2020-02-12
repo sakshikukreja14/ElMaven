@@ -506,8 +506,8 @@ void ProjectDatabase::saveAlignment(const vector<mzSample*>& samples)
             // save rt for every 200th scan (and last scan)
             if (i % 200 == 0 || i == s->scans.size() - 1) {
                 auto scan = s->scans[i];
-                float rt_updated = scan->rt;
-                float rt_original = scan->originalRt;
+                float rt_updated = scan->rt();
+                float rt_original = scan->originalRt();
                 alignmentQuery->bind(":sample_id", s->getSampleId());
                 alignmentQuery->bind(":scannum", -1);
                 alignmentQuery->bind(":rt_original", rt_original);
@@ -551,19 +551,19 @@ void ProjectDatabase::saveScans(const vector<mzSample*>& sampleSet)
     float ppm = 20;
     for (auto s : sampleSet) {
         for (auto scan : s->scans) {
-            if (scan->mslevel == 1)
+            if (scan->mslevel() == 1)
                 continue;
 
             string scanData = _getScanSignature(scan, 2000);
 
             scansQuery->bind(":sample_id", s->getSampleId());
-            scansQuery->bind(":scan", scan->scannum);
+            scansQuery->bind(":scan", scan->scannum());
             scansQuery->bind(":file_seek_start", -1);
             scansQuery->bind(":file_seek_end", -1);
-            scansQuery->bind(":mslevel", scan->mslevel);
-            scansQuery->bind(":rt", scan->rt);
-            scansQuery->bind(":precursor_mz", scan->precursorMz);
-            scansQuery->bind(":precursor_charge", scan->precursorCharge);
+            scansQuery->bind(":mslevel", scan->mslevel());
+            scansQuery->bind(":rt", scan->rt());
+            scansQuery->bind(":precursor_mz", scan->precursorMz());
+            scansQuery->bind(":precursor_charge", scan->precursorCharge());
             scansQuery->bind(":precursor_ic", scan->totalIntensity());
             scansQuery->bind(":precursor_purity", scan->getPrecursorPurity(ppm));
             scansQuery->bind(":minmz", scan->minMz());
@@ -1222,10 +1222,10 @@ void ProjectDatabase::loadAndPerformAlignment(const vector<mzSample*>& loaded)
 
         unordered_map<int, Scan*> scanMap;
         for (auto scan : sample->scans) {
-            if (scan->mslevel > 1)
+            if (scan->mslevel() > 1)
                 continue;
 
-            scanMap[scan->scannum] = scan;
+            scanMap[scan->scannum()] = scan;
         }
         sampleScanMap[sample->getSampleId()] = scanMap;
     }
@@ -1253,8 +1253,8 @@ void ProjectDatabase::loadAndPerformAlignment(const vector<mzSample*>& loaded)
             }
 
             Scan* scan = scanMap[scannum];
-            scan->rt = alignmentQuery->floatValue("rt_updated");
-            scan->originalRt = alignmentQuery->floatValue("rt_original");
+            scan->setRt  (alignmentQuery->floatValue("rt_updated"));
+            scan->setOriginalRt(alignmentQuery->floatValue("rt_original"));
         } else {
             // perform segmented alignment
             segCount++;

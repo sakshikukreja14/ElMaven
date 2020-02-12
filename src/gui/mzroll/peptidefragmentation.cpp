@@ -52,7 +52,7 @@ void PeptideFragmentationWidget::setResolution(MassCutoff *massCutoff) {
 }
 
 void PeptideFragmentationWidget::setScan(Scan* s) {
-    if (s and s->mslevel > 1) {
+    if (s and s->mslevel() > 1) {
         _scan->deepcopy(s);
       //  _scan->quantileFilter(80);
         compute();

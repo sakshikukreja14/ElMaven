@@ -86,12 +86,12 @@ void SampleRtWidget::prepareGraphDataPolyFit(QVector<double>&xAxis,
     // just a sanity check to prevent SIGSEV
     if (!sample->scans.empty() && coe != NULL) {
         for (auto const scan : sample->scans) {
-            xAxis.push_back(scan->rt);
+            xAxis.push_back(scan->rt());
 
             double y = 0;
-            y = leasev(coe, degree, scan->rt);
+            y = leasev(coe, degree, scan->rt());
 
-            yAxis.push_back(y - scan->rt);
+            yAxis.push_back(y - scan->rt());
         }
     }
 }
@@ -103,10 +103,10 @@ void SampleRtWidget::prepareGraphDataObiWarp(QVector<double>&xAxis,
     double rt, rtDiff;
 
     for (auto const scan : sample->scans) {
-        rt = scan->originalRt;
+        rt = scan->originalRt();
         xAxis.push_back(rt);
 
-        rtDiff = scan->originalRt - scan->rt;
+        rtDiff = scan->originalRt() - scan->rt();
         yAxis.push_back(rtDiff);
     }
 }

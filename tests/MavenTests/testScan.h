@@ -37,7 +37,6 @@ class TestScan : public QObject {
         void testintensityFilter();
         void testsimpleCentroid();
         void testhasMz();
-        void testchargeSeries();
         void testdeconvolute();
         void testgetTopPeaks();
 

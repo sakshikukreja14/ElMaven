@@ -23,12 +23,12 @@ Fragment::Fragment(Scan* scan,
                    float minSigNoiseRatio,
                    int maxFragmentSize)
 {
-    this->precursorMz = scan->precursorMz;
-    this->collisionEnergy = scan->collisionEnergy;
+    this->precursorMz = scan->precursorMz();
+    this->collisionEnergy = scan->collisionEnergy();
     this->polarity = scan->getPolarity();
-    this->sampleName = scan->sample->sampleName;
-    this->scanNum = scan->scannum;
-    this->precursorCharge = scan->precursorCharge;
+    this->sampleName = scan->sample()->sampleName;
+    this->scanNum = scan->scannum();
+    this->precursorCharge = scan->precursorCharge();
     vector<pair<float, float>> mzarray = scan->getTopPeaks(minFractionalIntensity,
                                                            minSigNoiseRatio,
                                                            5);
@@ -40,7 +40,7 @@ Fragment::Fragment(Scan* scan,
     }
     this->obscount = vector<int>(this->mzValues.size(), 1);
     this->consensus = NULL;
-    this->rt = scan->rt;
+    this->rt = scan->rt();
     //TODO: why use hard-coded PPM value? use user set PPM
     this->purity = scan->getPrecursorPurity(10.0);
 }
