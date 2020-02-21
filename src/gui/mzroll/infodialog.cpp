@@ -4,6 +4,7 @@
 #include "infodialog.h"
 #include "mainwindow.h"
 #include "ui_infodialog.h"
+#include "reaction.h"
 
 // function that hides a widget by fading it out
 void fadeOut(QWidget* parent, QWidget* widget)

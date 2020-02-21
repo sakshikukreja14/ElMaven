@@ -374,7 +374,7 @@ vector<float> PeakGroup::getOrderedIntensityVector(vector<mzSample*>& samples, Q
             }
 
             //normalize
-            if(sample) y *= sample->getNormalizationConstant();
+            if(sample) y *= sample->normalizationConstant();
             if(maxIntensity[s] < y) { maxIntensity[s]=y;}
         }
     }

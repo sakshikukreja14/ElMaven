@@ -191,8 +191,8 @@ void GalleryWidget::addEicPlots(std::vector<mzLink>&links) {
 
 	for (unsigned int i=0; i < links.size();  i++ ) {
 		mzLink link = links[i];
-   		mzSlice slice;
-		float mass = link.mz2;
+                mzSlice slice;
+                float mass = link.mz2();
 		slice.mzmin = mass - compoundMassCutoff->massCutoffValue(mass);
 		slice.mzmax = mass + compoundMassCutoff->massCutoffValue(mass);
 		slice.rtmin = current.rtmin;

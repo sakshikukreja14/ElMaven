@@ -64,7 +64,6 @@ vector<EIC*> PeakDetector::pullEICs(mzSlice* slice,
                 e = sample->getEIC(slice->srmId, mp->eicType);
             } else if (c && c->precursorMz > 0 && c->productMz > 0) {
                 e = sample->getEIC(c->precursorMz,
-                                   c->collisionEnergy,
                                    c->productMz,
                                    mp->eicType,
                                    mp->filterline,

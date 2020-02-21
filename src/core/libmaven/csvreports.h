@@ -12,6 +12,52 @@ class mzSample;
 class EIC;
 class MavenParameters;
 
+enum GroupReport {
+    Label = 0,
+    MetaGroupId,
+    GroupId,
+    GoodPeakCount,
+    MedMz,
+    MedRt,
+    MaxQuality,
+    AdductName,
+    IsotopeLabel,
+    CompoundGroup,
+    CompoundId,
+    Formula,
+    ExpectedRtDiff,
+    PpmDiff,
+    Parent,
+    Sample091215_120i,
+    Sample091215_120M,
+    Sample091215_240i,
+    Sample091215_240M
+};
+
+enum PeakReport {
+    GroupIdPeak = 0,
+    CompoundPeak,
+    CompoundIdPeak,
+    FormulaPeak,
+    Sample,
+    PeakMz,
+    Mzmin,
+    Mzmax,
+    Rt,
+    Rtmin,
+    Rtmax,
+    Quality,
+    PeakIntensity,
+    PeakArea,
+    PeakSplineArea,
+    PeakAreaTop,
+    PeakAreaCorrected,
+    PeakAreaTopCorrected,
+    NoNoiseObs,
+    SignalBaseLineRatio,
+    FromBlankSample
+};
+
 class CSVReports
 {
     /**@brief -  class to write and export csv file

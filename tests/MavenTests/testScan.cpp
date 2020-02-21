@@ -1,4 +1,5 @@
 #include "testScan.h"
+#include "chargesSpecies.h"
 #include "masscutofftype.h"
 #include "mavenparameters.h"
 #include "mzSample.h"

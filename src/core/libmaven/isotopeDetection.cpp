@@ -11,6 +11,7 @@
 #include "peakFiltering.h"
 #include "PeakGroup.h"
 #include "Scan.h"
+#include "isotope.h"
 
 IsotopeDetection::IsotopeDetection(
     MavenParameters *mavenParameters,

@@ -2,11 +2,10 @@
 #define PEAK_H
 
 #include "standardincludes.h"
-
+#include "mzlink.h"
 class mzSample;
 class EIC;
 class Scan;
-class mzLink;
 
 using namespace std;
 

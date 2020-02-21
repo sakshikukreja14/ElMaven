@@ -3,6 +3,8 @@
 #include "mzSample.h"
 #include "constants.h"
 #include "SavGolSmoother.h"
+#include "chargesSpecies.h"
+#include "mzPoint.h"
 
 Scan::Scan(mzSample* sample, int scannum, int mslevel, float rt, float precursorMz, int polarity) {
     this->sample = sample;
@@ -628,7 +630,7 @@ double Scan::getPrecursorPurity(float ppm)
     //calculate total intensity in isolated segment
     double totalInt = 0;
     for (mzPoint& point: isolatedSegment)
-        totalInt += point.y;
+        totalInt += point.y();
 
     delete massCutoff;
     if (totalInt > 0) {

@@ -15,6 +15,7 @@
 #include "projectdockwidget.h"
 #include "tinyplot.h"
 #include "widgets/qprog.h"
+#include "reaction.h"
 
 PathwayWidget::PathwayWidget(MainWindow* parent) {
 	mw = parent;

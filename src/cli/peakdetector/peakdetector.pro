@@ -23,7 +23,8 @@ INCLUDEPATH +=  $$top_srcdir/src/core/libmaven     \
                 $$top_srcdir/src/pollyCLI          \
                 $$top_srcdir/3rdparty/obiwarp      \
                 $$top_srcdir/3rdparty/Eigen        \
-                $$top_srcdir/src/
+                $$top_srcdir/src/                  \
+                $$top_srcdir/src/core/libmaven/datastructures
 
 QMAKE_LFLAGS  +=  -L$$top_builddir/libs/
 

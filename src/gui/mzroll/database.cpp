@@ -9,6 +9,8 @@
 #include "mzMassCalculator.h"
 #include "mzSample.h"
 #include "mzUtils.h"
+#include "pathway.h"
+#include "reaction.h"
 
 bool Database::connect(string filename) {
     QString dbname(filename.c_str());

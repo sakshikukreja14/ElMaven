@@ -1,4 +1,5 @@
 #include "datastructures/adduct.h"
+#include "chargesSpecies.h"
 #include "line.h"
 #include "Compound.h"
 #include "constants.h"
@@ -14,6 +15,7 @@
 #include "Scan.h"
 #include "spectramatching.h"
 #include "spectrawidget.h"
+
 
 SpectraWidget::SpectraWidget(MainWindow* mw, bool isFragSpectra) {
     this->mainwindow = mw;
@@ -681,7 +683,7 @@ void SpectraWidget::drawAnnotations() {
    QFont font = QApplication::font(); font.setPointSizeF(font.pointSize()*0.8);
 
     for(int i=0; i < links.size(); i++ ) {
-        if ( links[i].mz2 < _minX || links[i].mz2 > _maxX ) continue;
+        if ( links[i].mz2() < _minX || links[i].mz2() > _maxX ) continue;
 
         QString labelText(links[i].note.c_str());
         QGraphicsTextItem* text = new QGraphicsTextItem(labelText,0);
@@ -691,8 +693,8 @@ void SpectraWidget::drawAnnotations() {
         _items.push_back(text);
 
         //position label
-        int x = toX(links[i].mz2);
-        int y = toY(links[i].value2);
+        int x = toX(links[i].mz2());
+        int y = toY(links[i].value2());
         text->setPos(x-5,y-25);
     }
 }
@@ -1191,7 +1193,7 @@ void SpectraWidget::annotateScan()
         for(unsigned int i=0; i< x->observedMzs.size(); i++) {
             QString noteText = tr("z=%1 M=%2").arg(x->observedCharges[i]).arg(x->deconvolutedMass);
             mzLink link = mzLink(mzfocus,x->observedMzs[i],noteText.toStdString());
-            link.value2 = x->observedIntensities[i];
+            link.setValue2(x->observedIntensities[i]);
             links.push_back(link);
         }
         delete(x);

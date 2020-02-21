@@ -1,15 +1,18 @@
 #include "mzSample.h"
+#include "EIC.h"
+#include "Matrix.h"
+#include "Scan.h"
 #include "base64.h"
 #include "datastructures/mzSlice.h"
-#include "statistics.h"
-#include "mzUtils.h"
-#include "mzPatterns.h"
-#include "mzFit.h"
+#include "doctest.h"
 #include "masscutofftype.h"
+#include "mzFit.h"
 #include "mzMassCalculator.h"
-#include "Matrix.h"
-#include "EIC.h"
-#include "Scan.h"
+#include "mzPatterns.h"
+#include "mzPoint.h"
+#include "mzUtils.h"
+#include "mzlink.h"
+#include "statistics.h"
 
 #include <MavenException.h>
 
@@ -32,17 +35,14 @@ mzSample::mzSample() : _setName(""), injectionOrder(0)
     maxIntensity = 0;
     minIntensity = 0;
     totalIntensity = 0;
-    _normalizationConstant = 1;  // TODO: Sahil Not being used anywhere
+    _normalizationConstant = 1;
     injectionTime = 0;
     _sampleOrder = -1;
     sampleNumber = -1;
     _C13Labeled = false;
     _N15Labeled = false;
-    _S34Labeled = false;  // Feng note: added to track S34 labeling state
-    _D2Labeled = false;   // Feng note: added to track D2 labeling state
-    // _setName =  "A"; //naman     Variable '_setName' is assigned in
-    // constructor body. Consider performing initialization in initialization
-    // list.
+    _S34Labeled = false;
+    _D2Labeled = false;
     color[0] = color[1] = color[2] = 0;
     color[3] = 1.0;
 }
@@ -68,24 +68,17 @@ void mzSample::addScan(Scan* s)
         and s->getPolarity() != mzSample::filter_polarity)
         return;
 
-    // unsigned int sizeBefore = s->intensity.size();
     if (mzSample::filter_centroidScans == true) {
         s->simpleCentroid();
     }
 
-    // unsigned int sizeAfter1 = s->intensity.size();
-
     if (mzSample::filter_intensityQuantile > 0) {
         s->quantileFilter(mzSample::filter_intensityQuantile);
     }
-    // unsigned int sizeAfter2 = s->intensity.size();
 
     if (mzSample::filter_minIntensity > 0) {
         s->intensityFilter(mzSample::filter_minIntensity);
     }
-    // unsigned int sizeAfter3 = s->intensity.size();
-    // cerr << "addScan " << sizeBefore <<  " " << sizeAfter1 << " " <<
-    // sizeAfter2 << " " << sizeAfter3 << endl;
 
     if (s->mslevel == 1)
         ++_numMS1Scans;
@@ -95,7 +88,7 @@ void mzSample::addScan(Scan* s)
     scans.push_back(s);
     s->scannum = scans.size() - 1;
 
-    //recalculate precursorMz of MS2 scans
+    // recalculate precursorMz of MS2 scans
     if (s->mslevel == 2 && _numMS1Scans > 0) {
         float ppm = 10;
         s->recalculatePrecursorMz(ppm);
@@ -105,46 +98,23 @@ void mzSample::addScan(Scan* s)
 string mzSample::getFileName(const string& filename)
 {
     char sep = '/';
-
     size_t i = filename.rfind(sep, filename.length());
-
     if (i != string::npos) {
         string fullname = filename.substr(i + 1, filename.length() - i);
         return (fullname.substr(0, fullname.find_last_of(".")));
     }
-
     return ("");
 }
 
-void mzSample::loadAnySample(const char* filename)
+void mzSample::sampleNaming(string filename)
 {
-    if (mystrcasestr(filename, "mzCSV") != NULL) {
-        parseMzCSV(filename);
-    } else if (mystrcasestr(filename, "mzdata") != NULL) {
-        parseMzData(filename);
-    } else if (mystrcasestr(filename, "mzxml") != NULL) {
-        parseMzXML(filename);
-    } else if (mystrcasestr(filename, "mzml") != NULL) {
-        parseMzML(filename);
-    } else if (mystrcasestr(filename, "cdf") != NULL) {
-        parseCDF(filename, 1);
-    } else {
-        parseMzData(filename);
-    }
-}
-
-void mzSample::sampleNaming(const char* filename)
-{
-    string filenameString = string(filename);
-
     // This is the complete file name
-    this->sampleName = getFileName(filenameString);
-
+    this->sampleName = getFileName(filename);
     // This is the sample name
-    this->fileName = filenameString;
+    this->fileName = filename;
 }
 
-void mzSample::checkSampleBlank(const char* filename)
+void mzSample::checkSampleBlank(string filename)
 {
     string filenameString = string(filename);
     this->isBlank = false;
@@ -155,15 +125,23 @@ void mzSample::checkSampleBlank(const char* filename)
     }
 }
 
-void mzSample::loadSample(const char* filename)
+void mzSample::loadSample(string filename)
 {
-    // Loading and Decoding the file
-    // catch any error while parsing
     try {
-        loadAnySample(filename);
-    }
-
-    catch (MavenException& excp) {
+        if (mystrcasestr(filename.c_str(), "mzCSV") != NULL) {
+            parseMzCSV(filename);
+        } else if (mystrcasestr(filename.c_str(), "mzdata") != NULL) {
+            parseMzData(filename);
+        } else if (mystrcasestr(filename.c_str(), "mzxml") != NULL) {
+            parseMzXML(filename);
+        } else if (mystrcasestr(filename.c_str(), "mzml") != NULL) {
+            parseMzML(filename);
+        } else if (mystrcasestr(filename.c_str(), "cdf") != NULL) {
+            parseCDF(filename, 1);
+        } else {
+            parseMzData(filename);
+        }
+    } catch (MavenException& excp) {
         cerr << endl << "Error: " << excp.what() << endl;
     }
 
@@ -180,10 +158,8 @@ void mzSample::loadSample(const char* filename)
     checkSampleBlank(filename);
 }
 
-void mzSample::parseMzCSV(const char* filename)
+void mzSample::parseMzCSV(string filename)
 {
-    // file structure:
-    // scannum,rt,mz,intensity,mslevel,precursorMz,polarity,srmid
     int lineNum = 0;
 
     ifstream myfile(filename);
@@ -241,38 +217,12 @@ void mzSample::parseMzCSV(const char* filename)
 
                 addScan(scan);
                 if (fields.size() > 7)
-                    scan->filterLine = fields[7];  // last field is srmId
+                    scan->filterLine = fields[7];
             }
 
             scan->mz.push_back(mz);
             scan->intensity.push_back(intensity);
             lastScanNum = scannum;
-        }
-    }
-}
-
-// void mzSample::writeMzCSV(const char* filename) const {
-void mzSample::writeMzCSV(const char* filename)
-{
-    // TODO naman unused function
-
-    ofstream mzCSV;
-    mzCSV.open(filename);
-    if (!mzCSV.is_open()) {
-        cerr << "Unable to write to a file" << filename;
-        return;
-    }
-
-    mzCSV << "scannum,rt,mz,intensity,mslevel,precursorMz,polarity,srmid"
-          << endl;
-    for (unsigned int i = 0; i < scans.size(); i++) {
-        Scan* scan = scans[i];
-        for (unsigned int j = 0; j < scan->nobs(); j++) {
-            mzCSV << scan->scannum + 1 << "," << scan->rt * 60 << ","
-                  << scan->mz[j] << "," << scan->intensity[j] << ","
-                  << scan->mslevel << "," << scan->precursorMz << ","
-                  << (scan->getPolarity() > 0 ? "+" : "-") << ","
-                  << scan->filterLine << endl;
         }
     }
 }
@@ -283,13 +233,15 @@ int mzSample::getPolarity()
         return scans[0]->getPolarity();
     return 0;
 }
-void mzSample::parseMzML(const char* filename)
+
+void mzSample::parseMzML(string filename)
 {
     xml_document doc;
 
     const unsigned int parse_options = parse_minimal;
 
-    pugi::xml_parse_result parseResult = doc.load_file(filename, parse_options);
+    pugi::xml_parse_result parseResult =
+        doc.load_file(filename.c_str(), parse_options);
     if (parseResult.status != pugi::xml_parse_status::status_ok) {
         throw MavenException(ErrorMsg::ParsemzMl);
     }
@@ -356,13 +308,12 @@ void mzSample::parseMzMLChromatogramList(const xml_node& chromatogramList)
                 .value();
         float precursorMz = string2float(precursorMzStr);
         float productMz = string2float(productMzStr);
-        // int mslevel=2;
 
-        for (xml_node binaryDataArray = binaryDataArrayList.child("binaryDataArray");
+        for (xml_node binaryDataArray =
+                 binaryDataArrayList.child("binaryDataArray");
              binaryDataArray;
              binaryDataArray =
                  binaryDataArray.next_sibling("binaryDataArray")) {
-
             map<string, string> attr = mzML_cvParams(binaryDataArray);
 
             int precision = 64;
@@ -370,15 +321,13 @@ void mzSample::parseMzMLChromatogramList(const xml_node& chromatogramList)
                 precision = 32;
 
             bool decompress = false;
-            if(attr.count("zlib compression"))
-                decompress=true;
+            if (attr.count("zlib compression"))
+                decompress = true;
 
             string binaryDataStr =
                 binaryDataArray.child("binary").child_value();
-            vector<float> binaryData = base64::decodeBase64(binaryDataStr,
-                                                             precision / 8,
-                                                             false,
-                                                             decompress);
+            vector<float> binaryData = base64::decodeBase64(
+                binaryDataStr, precision / 8, false, decompress);
 
             if (attr.count("time array")) {
                 timeVector = binaryData;
@@ -388,14 +337,10 @@ void mzSample::parseMzMLChromatogramList(const xml_node& chromatogramList)
             }
         }
 
-        //	cerr << chromatogramId << endl;
-        //	cerr << timeVector.size() << " ints=" << intsVector.size() <<
-        //endl; 	cerr << "pre: " << precursorMz << " prod=" << productMz << endl;
-
-        // if (precursorMz and precursorMz ) {
-        if (precursorMz) {  // naman Same expression on both sides of '&&'.
-            int mslevel =
-                2;  // naman The scope of the variable 'mslevel' can be reduced.
+        if (precursorMz) {
+            // naman Same expression on both sides of '&&'.
+            int mslevel = 2;
+            // naman The scope of the variable 'mslevel' can be reduced.
             for (unsigned int i = 0; i < timeVector.size(); i++) {
                 Scan* scan = new Scan(
                     this, scannum++, mslevel, timeVector[i], precursorMz, -1);
@@ -434,20 +379,19 @@ int mzSample::getSampleNoChromatogram(const string& chromatogramId)
         return -1;
 }
 
-void mzSample::cleanFilterLine(string &filterline) {
-
+void mzSample::cleanFilterLine(string& filterline)
+{
     string filterRegex;
     regex rx;
     for (const string& filterId : filterChromatogram) {
         filterRegex = filterId + "\ *\=\ *[0-9]*\.?[0-9]+";
         rx = filterRegex;
         filterline = std::regex_replace(filterline, rx, "");
-	}
+    }
 }
 
 void mzSample::parseMzMLSpectrumList(const xml_node& spectrumList)
 {
-    // Iterate through spectrums
     int scannum = 0;
 
     for (xml_node spectrum = spectrumList.child("spectrum"); spectrum;
@@ -541,16 +485,14 @@ void mzSample::parseMzMLSpectrumList(const xml_node& spectrumList)
                 precision = 32;
 
             bool decompress = false;
-            if(attr.count("zlib compression"))
-                decompress=true;
+            if (attr.count("zlib compression"))
+                decompress = true;
 
             string binaryDataStr =
                 binaryDataArray.child("binary").child_value();
             if (!binaryDataStr.empty()) {
-                vector<float> binaryData = base64::decodeBase64(binaryDataStr,
-                                                                 precision / 8,
-                                                                 false,
-                                                                 decompress);
+                vector<float> binaryData = base64::decodeBase64(
+                    binaryDataStr, precision / 8, false, decompress);
                 if (attr.count("m/z array")) {
                     mzVector = binaryData;
                 }
@@ -585,18 +527,18 @@ map<string, string> mzSample::mzML_cvParams(xml_node node)
             name += " " + unit;
         }
         attr[name] = value;
-        // cerr << name << "->" << value << endl;
     }
     return (attr);
 }
 
-void mzSample::parseMzData(const char* filename)
+void mzSample::parseMzData(string filename)
 {
     xml_document doc;
 
     const unsigned int parse_options = parse_minimal;
 
-    pugi::xml_parse_result parseResult = doc.load_file(filename, parse_options);
+    pugi::xml_parse_result parseResult =
+        doc.load_file(filename.c_str(), parse_options);
     if (parseResult.status != pugi::xml_parse_status::status_ok) {
         throw(MavenException(ErrorMsg::ParsemzData));
     }
@@ -617,18 +559,12 @@ void mzSample::parseMzData(const char* filename)
         xml_node spectrumInstrument = spectrum.first_element_by_path(
             "spectrumDesc/spectrumSettings/spectrumInstrument");
         int mslevel = spectrumInstrument.attribute("msLevel").as_int();
-        // cerr << mslevel << " " << spectrum.attribute("msLevel").value() <<
-        // endl;
-
         for (xml_node cvParam = spectrumInstrument.child("cvParam"); cvParam;
              cvParam = cvParam.next_sibling("cvParam")) {
-            //	cout << "cvParam=" << cvParam.attribute("name").value() << endl;
-            //
             if (strncasecmp(
                     cvParam.attribute("name").value(), "TimeInMinutes", 10)
                 == 0) {
                 rt = cvParam.attribute("value").as_float();
-                // cout << "rt=" << rt << endl;
             }
 
             if (strncasecmp(
@@ -649,9 +585,6 @@ void mzSample::parseMzData(const char* filename)
             }
         }
 
-        // cout <<
-        // spectrum.first_element_by_path("spectrumDesc/spectrumSettings/spectrumInstrument").child_value()
-        // << endl
         if (mslevel <= 0)
             mslevel = 1;
         Scan* scan =
@@ -667,7 +600,6 @@ void mzSample::parseMzData(const char* filename)
         scan->intensity =
             base64::decodeBase64(b64intensity, precision1 / 8, false, false);
 
-        // cout << "mz" << endl;
         int precision2 = spectrum.child("mzArrayBinary")
                              .child("data")
                              .attribute("precision")
@@ -675,19 +607,17 @@ void mzSample::parseMzData(const char* filename)
         string b64mz =
             spectrum.child("mzArrayBinary").child("data").child_value();
         scan->mz = base64::decodeBase64(b64mz, precision2 / 8, false, false);
-
-        // cout << "spectrum " << spectrum.attribute("title").value() << endl;
     }
 }
 
-xml_node mzSample::getmzXMLSpectrumData(xml_document& doc, const char* filename)
+xml_node mzSample::getmzXMLSpectrumData(xml_document& doc, string filename)
 {
     // parse_minimal has all options turned off. This option mask means
     // that pugixml does not add declaration nodes, document type declaration
     // nodes, PI nodes, CDATA sections and comments to the resulting tree and
     // does not perform any conversion for input data, so theoretically it is
     // the fastest mode
-    bool loadok = doc.load_file(filename, pugi::parse_minimal);
+    bool loadok = doc.load_file(filename.c_str(), pugi::parse_minimal);
 
     // Checking if the file can be loaded if it can be loaded
     if (!loadok) {
@@ -719,7 +649,7 @@ xml_node mzSample::getmzXMLSpectrumData(xml_document& doc, const char* filename)
     return spectrumstore;
 }
 
-void mzSample::setInstrumentSettigs(xml_document& doc, xml_node spectrumstore)
+void mzSample::setInstrumentSettigs(xml_node spectrumstore)
 {
     // Getting the instrument related information
     xml_node msInstrument = spectrumstore.child("msInstrument");
@@ -762,7 +692,7 @@ void mzSample::parseMzXMLData(const xml_node& spectrumstore)
     }
 }
 
-void mzSample::parseMzXML(const char* filename)
+void mzSample::parseMzXML(string filename)
 {
     xml_document doc;
 
@@ -770,16 +700,13 @@ void mzSample::parseMzXML(const char* filename)
 
     if (!spectrumstore.empty()) {
         // Setting the instrument related information
-        setInstrumentSettigs(doc, spectrumstore);
+        setInstrumentSettigs(spectrumstore);
         // parse mzXML information from the scan
         parseMzXMLData(spectrumstore);
     } else
         throw MavenException(ErrorMsg::ParsemzXml);
 }
 
-/**
- * calculate the RT in minutes
- **/
 float mzSample::parseRTFromMzXML(xml_attribute& attr)
 {
     float rt = 0.0;
@@ -819,7 +746,7 @@ int mzSample::getPolarityFromfilterLine(string filterLine)
     int MIN_FILTER_LINE_LENGTH = 13;
     int scanpolarity = 0;
 
-    if (filterLine.size() > MIN_FILTER_LINE_LENGTH) {
+    if (static_cast<int>(filterLine.size()) > MIN_FILTER_LINE_LENGTH) {
         if (filterLine.find(" + ") != string::npos) {
             scanpolarity = 1;
         } else {
@@ -845,12 +772,14 @@ vector<float> mzSample::parsePeaksFromMzXML(const xml_node& scan)
         // if the data is been compressed in zlib format this part will
         // take care.
         bool decompress = false;
-        if (strncasecmp(peaks.attribute("compressionType").value(), "zlib", 4) == 0) {
+        if (strncasecmp(peaks.attribute("compressionType").value(), "zlib", 4)
+            == 0) {
             decompress = true;
         }
 
-        bool networkorder = false;  // naman The scope of the variable
-                                    // 'networkorder' can be reduced.
+        bool networkorder = false;
+        // naman The scope of the variable
+        // 'networkorder' can be reduced.
 
         if (peaks.attribute("byteOrder").empty()
             || strncasecmp(peaks.attribute("byteOrder").value(), "network", 5)
@@ -865,16 +794,10 @@ vector<float> mzSample::parsePeaksFromMzXML(const xml_node& scan)
             precision = peaks.attribute("precision").as_int();
         }
 
-        // cerr << "new scan=" << scannum << " msL=" << msLevel << " rt=" << rt
-        // << " precMz=" << precursorMz << " polar=" << scanpolarity
-        //    << " prec=" << precision << endl;
-
         mzint = base64::decodeBase64(
             b64String, precision / 8, networkorder, decompress);
-
         return mzint;
     }
-
     return mzint;
 }
 
@@ -889,14 +812,12 @@ void mzSample::populateMzAndIntensity(const vector<float>& mzint, Scan* _scan)
     for (int i = 0; i < size; i++) {
         float mzValue = mzint[j++];
         float intensityValue = mzint[j++];
-        // cerr << mzValue << " " << intensityValue << endl;
         if (mzValue > 0 && intensityValue > 0) {
             _scan->mz[count] = mzValue;
             _scan->intensity[count] = intensityValue;
             count++;
         }
     }
-
     _scan->mz.resize(count);
     _scan->intensity.resize(count);
 }
@@ -992,22 +913,10 @@ void mzSample::parseMzXMLScan(const xml_node& scan, const int& scannum)
         _scan->scanType = scanType;
 
     _scan->productMz = productMz;
-
     _scan->collisionEnergy = collisionEnergy;
-
     populateMzAndIntensity(mzint, _scan);
-
     populateFilterline(filterLine, _scan);
-
     addScan(_scan);
-}
-
-void mzSample::summary()
-{
-    // void mzSample::summary() const {
-    cerr << "Num of obs:" << this->scans.size() << endl;
-    cerr << "Rt range:" << this->minRt << " " << this->maxRt << endl;
-    cerr << "Mz range:" << this->minMz << " " << this->maxMz << endl;
 }
 
 void mzSample::calculateMzRtRange()
@@ -1035,9 +944,11 @@ void mzSample::calculateMzRtRange()
             float mz = currentScan->mz[i];
             totalIntensity += intensity;
             if (mz < minMz && mz > 0)
-                minMz = mz; //sanity check must be greater > 0
+                // sanity check must be greater > 0
+                minMz = mz;
             if (mz > maxMz && mz < 1e9)
-                maxMz = mz; //sanity check m/z over a billion
+                // sanity check m/z over a billion
+                maxMz = mz;
             if (intensity < minIntensity)
                 minIntensity = intensity;
             if (intensity > maxIntensity)
@@ -1045,7 +956,7 @@ void mzSample::calculateMzRtRange()
             nobs++;
         }
     }
-    //sanity check
+    // sanity check
     if (minRt <= 0)
         minRt = 0;
     if (maxRt >= 1e4)
@@ -1054,25 +965,21 @@ void mzSample::calculateMzRtRange()
 
 float mzSample::getMaxRt(const vector<mzSample*>& samples)
 {
-    // TODO naman unused function
     float maxRt = 0;
     for (unsigned int i = 0; i < samples.size(); i++)
         if (samples[i]->maxRt > maxRt)
             maxRt = samples[i]->maxRt;
-
     return maxRt;
 }
 
 float mzSample::getAverageFullScanTime()
 {
-    // float mzSample::getAverageFullScanTime() const {
     float s = 0;
     int n = 0;
     Scan* lscan = NULL;
     Scan* tscan = NULL;
     if (scans.size() == 0)
         return 0;
-
     for (unsigned int i = 1; i < scans.size(); i++) {
         if (scans[i]->mslevel == 1) {
             tscan = scans[i];
@@ -1111,7 +1018,6 @@ Scan* mzSample::getScan(unsigned int scanNum)
 }
 
 EIC* mzSample::getEIC(float precursorMz,
-                      float collisionEnergy,
                       float productMz,
                       int eicType,
                       string filterline,
@@ -1128,17 +1034,15 @@ EIC* mzSample::getEIC(float precursorMz,
 
     for (unsigned int i = 0; i < scans.size(); i++) {
         Scan* scan = scans[i];
-        if (!(scan->filterLine == filterline || filterline == ""))
+        if (!(scan->filterLine == filterline || filterline == "")) {
             continue;
-        if (scan->mslevel != 2)
+        }
+        if (scan->mslevel != 2) {
             continue;
-        if (precursorMz && abs(scan->precursorMz - precursorMz) > amuQ1)
+        }
+        if (precursorMz && abs(scan->precursorMz - precursorMz) > amuQ1) {
             continue;
-        // if (productMz && abs(scan->productMz - productMz) > amuQ3)
-        //	continue;
-        // if (collisionEnergy && abs(scan->collisionEnergy-collisionEnergy) >
-        // 0.5) continue;
-
+        }
         float eicMz = 0;
         float eicIntensity = 0;
 
@@ -1217,17 +1121,12 @@ EIC* mzSample::getEIC(float precursorMz,
         e->rtmax = e->rt[e->size() - 1];
     }
 
-    float scale = getNormalizationConstant();
+    float scale = normalizationConstant();
     if (scale != 1.0)
         for (unsigned int j = 0; j < e->size(); j++) {
             e->intensity[j] *= scale;
         }
 
-    // if (e->size() == 0)
-    //     cerr << "getEIC(Q1,CE,Q3): is empty" << precursorMz << " "
-    //          << collisionEnergy << " " << productMz << endl;
-    // std::cerr << "getEIC(Q1,CE,Q3): srm" << precursorMz << " "
-    //           << e->intensity.size() << endl;
     return e;
 }
 
@@ -1241,12 +1140,11 @@ EIC* mzSample::getEIC(string srm, int eicType)
     e->mzmin = 0;
     e->mzmax = 0;
 
-    // if (srmScans.size() == 0 )
-
     // naman Checking for ‘List’ emptiness might be inefficient. Using
     // List.empty() instead of List.size() can be faster. List.size() can take
     // linear time but List.empty() is guaranteed to take constant time. src:
-    // https://kmdarshan.wordpress.com/2011/08/15/static-analysis-of-cc-code-using-cppcheck/
+    // https://kmdarshan.wordpress.com/2011/08/15/static-analysis-of-cc-code-
+    // using-cppcheck/
     if (srmScans.empty()) {
         enumerateSRMScans();
     }
@@ -1313,15 +1211,11 @@ EIC* mzSample::getEIC(string srm, int eicType)
         e->rtmax = e->rt[e->size() - 1];
     }
 
-    float scale = getNormalizationConstant();
+    float scale = normalizationConstant();
     if (scale != 1.0)
         for (unsigned int j = 0; j < e->size(); j++) {
             e->intensity[j] *= scale;
         }
-    // if (e->size() == 0)
-    //     cerr << "getEIC(SRM STRING): is empty" << srm << endl;
-    // std::cerr << "getEIC: srm" << srm << " " << e->intensity.size() << endl;
-
     return e;
 }
 
@@ -1381,28 +1275,19 @@ EIC* mzSample::getEIC(float mzmin,
     e->getRTMinMaxPerScan();
 
     // scale EIC by normalization constant
-    float scale = getNormalizationConstant();
+    float scale = normalizationConstant();
     e->normalizeIntensityPerScan(scale);
-
-    // if (e->size() == 0)
-    //     cerr << "getEIC(mzrange,rtrange,mslevel): is empty" << mzmin << " "
-    //          << mzmax << " " << rtmin << " " << rtmax << endl;
 
     return (e);
 }
 
 EIC* mzSample::getTIC(float rtmin, float rtmax, int mslevel)
 {
-    // TODO naman unused function
-
     // ajust EIC retention time window to match sample retentention times
     if (rtmin < this->minRt)
         rtmin = this->minRt;
     if (rtmax > this->maxRt)
         rtmax = this->maxRt;
-
-    // cerr << "getEIC()" << setprecision(7) << mzmin << " " << mzmax << " " <<
-    // rtmin << " " << rtmax << endl;
 
     EIC* e = new EIC();
     e->sampleName = sampleName;
@@ -1447,9 +1332,6 @@ EIC* mzSample::getBIC(float rtmin, float rtmax, int mslevel)
         rtmin = this->minRt;
     if (rtmax > this->maxRt)
         rtmax = this->maxRt;
-
-    // cerr << "getEIC()" << setprecision(7) << mzmin << " " << mzmax << " " <<
-    // rtmin << " " << rtmax << endl;
 
     EIC* e = new EIC();
     e->sampleName = sampleName;
@@ -1516,7 +1398,7 @@ float mzSample::correlation(float mz1,
 }
 
 // TODO: is_verbose not being used
-int mzSample::parseCDF(const char* filename, int is_verbose)
+int mzSample::parseCDF(string filename, int is_verbose)
 {
 #ifdef CDFPARSER
     int cdf = 0;
@@ -1537,7 +1419,7 @@ int mzSample::parseCDF(const char* filename, int is_verbose)
     // double inty_pt=0;
     // double inty=0;
 
-    cdf = ms_open_read(const_cast<char*>(filename));
+    cdf = ms_open_read(const_cast<char*>(filename.c_str()));
     if (-1 == cdf) {
         fprintf(stderr, "\nopen_cdf_ms: ms_open_read failed!");
         return 0;
@@ -1637,7 +1519,7 @@ int mzSample::parseCDF(const char* filename, int is_verbose)
         ms_init_per_scan(FALSE, &raw_data, NULL);
         raw_data.scan_no = (long)scan;
         double mass_pt, inty_pt = 0.0;
-            /* init */  // naman The scope can be reduced.
+        /* init */  // naman The scope can be reduced.
 
         if (MS_ERROR
             == ms_read_per_scan(
@@ -1743,7 +1625,6 @@ Scan* mzSample::getAverageScan(float rtmin,
                                float sd)
 {
     // TODO naman unused function
-
     float rt = rtmin + (rtmax - rtmin) / 2;
     int scanCount = 0;
     int scannum = 0;
@@ -1778,8 +1659,6 @@ Scan* mzSample::getAverageScan(float rtmin,
         avgScan->mz.push_back((float)avgMz);
         avgScan->intensity.push_back((float)totalIntensity / mz_count[bin]);
     }
-    // cout << "getAverageScan() from:" << from << " to:" << to << " scanCount:"
-    // << scanCount << "scans. mzs=" << avgScan->nobs() << endl;
     return avgScan;
 }
 
@@ -1811,7 +1690,7 @@ vector<Scan*> mzSample::getFragmentationEvents(mzSlice* slice)
     vector<Scan*> matchedScans;
     for (auto scan : scans) {
         if (scan->mslevel != 2)
-            continue;  // ms2 + scans only
+            continue;
         if (scan->rt < slice->rtmin)
             continue;
         if (scan->rt > slice->rtmax)
@@ -1849,35 +1728,319 @@ void mzSample::applyPolynomialTransform()
     int poly_align_degree = polynomialAlignmentTransformation.size() - 1;
     if (poly_align_degree <= 0)
         return;
-
     double* transform = &polynomialAlignmentTransformation.front();
     for (unsigned int i = 0; i < scans.size(); i++) {
         float newrt = leasev(transform, poly_align_degree, scans[i]->rt);
-        // cerr << "applyPolynomialTransform() " << scans[i]->rt << "\t" <<
-        // newrt << endl;
         scans[i]->rt = newrt;
     }
 }
 
-mzLink::mzLink()
+///////////////////////////TEST CASE////////////////////////////////////
+
+TEST_CASE("Testing mzPoint Class")
 {
-    mz1 = mz2 = 0.0;
-    value1 = value2 = 0.0;
-    data1 = data2 = NULL;
-    correlation = 0;
+    mzPoint point1(4.3, 5.2, 6.3);
+    mzPoint point2(5.3, 7.2, 8.3);
+
+    SUBCASE("Testing assignment operator overloading")
+    {
+        mzPoint point3;
+        point3 = point1;
+
+        REQUIRE(doctest::Approx(point3.x()) == 4.3f);
+        REQUIRE(doctest::Approx(point3.y()) == 5.2f);
+        REQUIRE(doctest::Approx(point3.z()) == 6.3f);
+    }
+
+    SUBCASE("Compare Functions")
+    {
+        REQUIRE(point1.compX(point1, point2) == true);
+        REQUIRE(point1.compY(point1, point2) == true);
+        REQUIRE(point1.compZ(point1, point2) == true);
+    }
 }
 
-mzLink::mzLink(int a, int b, string n) : value1(a), value2(b), note(n)
+TEST_CASE("Testing mzLink Class")
 {
-    mz1 = mz2 = 0.0;
-    value1 = value2 = 0.0;
-    data1 = data2 = NULL;
-    correlation = 0;
+    mzLink mzlink1;
+    mzLink mzlink2(1, 2, "correlation");
+    mzLink mzlink3(3.2f, 4.5f, "correlation");
+
+    vector<float> x1;
+    vector<float> y1;
+    x1.push_back(1.2);
+    x1.push_back(2.3);
+    x1.push_back(3.4);
+    y1.push_back(2.3);
+    y1.push_back(3.5);
+    y1.push_back(7.2);
+    mzlink2.setCorrelation(mzUtils::correlation(x1, y1));
+
+    vector<float> x2;
+    vector<float> y2;
+    x2.push_back(1.2);
+    x2.push_back(2.3);
+    x2.push_back(3.4);
+    y2.push_back(1.1);
+    y2.push_back(2.3);
+    y2.push_back(3.4);
+    mzlink3.setCorrelation(mzUtils::correlation(x2, y2));
+
+    REQUIRE(mzlink2.compMz(mzlink2, mzlink3) == true);
+    REQUIRE(mzlink2.compCorrelation(mzlink3, mzlink2) == true);
 }
-mzLink::mzLink(float a, float b, string n) : mz1(a), mz2(b), note(n)
+
+TEST_CASE("Testing mzSample Class")
 {
-    mz1 = mz2 = 0.0;
-    value1 = value2 = 0.0;
-    data1 = data2 = NULL;
-    correlation = 0;
+    SUBCASE("Testing load mzXML")
+    {
+        mzSample mzsample;
+        string fileName = "bin/methods/091215_120i.mzXML";
+        mzsample.loadSample(fileName);
+        REQUIRE(mzsample.scans.size() == 1646);
+
+        float res = mzsample.getAverageFullScanTime();
+        REQUIRE(doctest::Approx(res) == 0.0152413f);
+
+        Scan* scan = mzsample.getScan(1);
+        REQUIRE(scan->mslevel == 1);
+        REQUIRE(scan->filterLine
+                == "FTMS {0,0}  - p ESI Full ms [320.00-330.00]");
+        REQUIRE(doctest::Approx(scan->rt) == 0.0183252f);
+        REQUIRE(scan->polarity == -1);
+
+        // Testing the meta data
+        REQUIRE(mzsample.instrumentInfo["msDetector"] == "unknown");
+        REQUIRE(mzsample.instrumentInfo["msIonisation"] == "NSI");
+        REQUIRE(mzsample.instrumentInfo["msManufacturer"]
+                == "Thermo Scientific");
+        REQUIRE(mzsample.instrumentInfo["msMassAnalyzer"] == "FTMS");
+        REQUIRE(mzsample.instrumentInfo["msModel"] == "LTQ Orbitrap");
+    }
+
+    SUBCASE("Testing load cdf Files")
+    {
+        mzSample mzsample;
+        string fileName = "bin/methods/CdfTestFile.cdf";
+        mzsample.loadSample(fileName);
+        cerr << mzsample.scans.size() << endl;
+    }
+
+    SUBCASE("Testing Add Scans Function")
+    {
+        mzSample sample;
+        Scan* scan = new Scan(&sample, 1, 0, 0.197233f, 328.817f, 0);
+        sample.addScan(scan);
+        REQUIRE(sample.scans.size() == 1);
+    }
+
+    SUBCASE("Testing load mzML file")
+    {
+        mzSample sample;
+        string filename = "bin/methods/ms2test1.mzML";
+        sample.loadSample(filename);
+        REQUIRE(sample.scanCount() == 3050);
+    }
+
+    SUBCASE("Testing correlation")
+    {
+        MassCutoff* massCutoff = new MassCutoff;
+        massCutoff->setMassCutoffAndType(5.6f, "ppm");
+        mzSample sample;
+        float res =
+            sample.correlation(5.6f, 7.2f, massCutoff, 1.2f, 2.3f, 1, "");
+        REQUIRE(res == 0);
+    }
+
+    SUBCASE("Testing save and restore retention time")
+    {
+        mzSample sample;
+        Scan* scan1 = new Scan(&sample, 1, 0, 0.197233f, 328.817f, 0);
+        sample.addScan(scan1);
+
+        Scan* scan2 = new Scan(&sample, 2, 0, 0.333f, 238.817f, 0);
+        sample.addScan(scan2);
+
+        sample.saveCurrentRetentionTimes();
+        REQUIRE(doctest::Approx(sample.lastSavedRTs[0]) == 0.197233f);
+        REQUIRE(doctest::Approx(sample.lastSavedRTs[1]) == 0.333f);
+
+        sample.restorePreviousRetentionTimes();
+        REQUIRE(doctest::Approx(sample.scans[0]->rt) == 0.197233f);
+        REQUIRE(doctest::Approx(sample.scans[1]->rt) == 0.333f);
+    }
+
+    SUBCASE("Polynomial Alignment Transformation")
+    {
+        mzSample sample;
+        Scan* scan1 = new Scan(&sample, 1, 0, 0.197233f, 328.817f, 0);
+        sample.addScan(scan1);
+
+        Scan* scan2 = new Scan(&sample, 2, 1, 0.333f, 238.817f, 0);
+        sample.addScan(scan2);
+
+        sample.polynomialAlignmentTransformation.push_back(1.2);
+        sample.polynomialAlignmentTransformation.push_back(2.3);
+        sample.polynomialAlignmentTransformation.push_back(5.2);
+        sample.polynomialAlignmentTransformation.push_back(6.7);
+        sample.polynomialAlignmentTransformation.push_back(8.9);
+
+        sample.applyPolynomialTransform();
+        REQUIRE(doctest::Approx(sample.scans[0]->rt) == 1.92079);
+        REQUIRE(doctest::Approx(sample.scans[1]->rt) == 2.89936);
+
+        REQUIRE(sample.scanCount() == 2);
+    }
+
+    SUBCASE("Testing Getters and Setter")
+    {
+        mzSample sample;
+        Scan* scan1 = new Scan(&sample, 1, 1, 0.197233f, 328.817f, 0);
+        sample.addScan(scan1);
+
+        Scan* scan2 = new Scan(&sample, 2, 2, 0.333f, 238.817f, 0);
+        sample.addScan(scan2);
+
+        int ms1Count = sample.ms1ScanCount();
+        int ms2Count = sample.ms2ScanCount();
+        REQUIRE(ms1Count == 1);
+        REQUIRE(ms2Count == 1);
+
+        sample.setSampleId(1);
+        sample.setSampleOrder(1);
+        sample.setInjectionOrder(2);
+        sample.setSetName("Test");
+        sample.setSampleName("TestSample");
+
+        int id = sample.getSampleId();
+        REQUIRE(id == 1);
+
+        int orderId = sample.getSampleOrder();
+        REQUIRE(orderId == 1);
+
+        int injectionOrder = sample.getInjectionOrder();
+        REQUIRE(injectionOrder == 2);
+
+        string setName = sample.getSetName();
+        REQUIRE(setName == "Test");
+
+        string name = sample.getSampleName();
+        REQUIRE(name == "TestSample");
+
+        vector<mzSample*> vsample;
+        sample.maxRt = 2.3;
+        mzSample sample2;
+        sample2.maxRt = 5.3;
+        vsample.push_back(&sample);
+        vsample.push_back(&sample2);
+        float max = sample.getMaxRt(vsample);
+        REQUIRE(doctest::Approx(max) == 5.3);
+
+        sample.setFilter_minIntensity(3);
+        sample.setFilter_centroidScans(true);
+        sample.setFilter_intensityQuantile(1);
+        sample.setFilter_mslevel(1);
+        sample.setFilter_polarity(-1);
+
+        REQUIRE(sample.getFilter_minIntensity() == 3);
+        REQUIRE(sample.getFilter_centroidScans() == true);
+        REQUIRE(sample.getFilter_intensityQuantile() == 1);
+        REQUIRE(sample.getFilter_mslevel() == 1);
+        REQUIRE(sample.getFilter_polarity() == -1);
+    }
+
+    SUBCASE("Testing Fragmentation Events")
+    {
+        vector<Scan*> matchedScan;
+        mzSample mzsample;
+
+        string fileName = "bin/methods/091215_120i.mzXML";
+        mzsample.loadSample(fileName);
+
+        mzSlice* slice = new mzSlice();
+        slice->rtmin = 0.1;
+        slice->rtmax = 10.0;
+
+        matchedScan = mzsample.getFragmentationEvents(slice);
+        REQUIRE(matchedScan.size() == 0);
+    }
+
+    SUBCASE("Testing compare functions")
+    {
+        mzSample sample1;
+        mzSample sample2;
+        sample1.setSampleOrder(1);
+        sample2.setSampleOrder(2);
+        REQUIRE(sample1.compSampleOrder(&sample1, &sample2) == true);
+        REQUIRE(sample1.compRevSampleOrder(&sample2, &sample1) == true);
+
+        sample1.setSampleName("Test1");
+        sample2.setSampleName("Test2");
+        REQUIRE(sample1.compSampleSort(&sample1, &sample2) == true);
+
+        sample1.injectionTime = 1;
+        sample2.injectionTime = 2;
+        REQUIRE(sample1.compInjectionTime(&sample1, &sample2) == true);
+    }
+
+    SUBCASE("Testing EICs functions")
+    {
+        mzSample mzsample;
+        Scan* scan;
+
+        mzsample.setNormalizationConstant(5.6f);
+        float res = mzsample.normalizationConstant();
+        REQUIRE(doctest::Approx(res) == 5.6);
+
+        scan = mzsample.getAverageScan(1.5, 2.5, 1, -1, 0.1);
+
+        REQUIRE(scan->mslevel == 1);
+        REQUIRE(scan->filterLine == "");
+        REQUIRE(scan->polarity == -1);
+
+        int polarity = mzsample.getPolarity();
+        REQUIRE(polarity == 0);
+
+        mzsample.minRt = 1.2;
+        mzsample.maxRt = 2.8;
+        mzsample.minMz = 1.7;
+        mzsample.maxMz = 3.5;
+        EIC* eic1 = mzsample.getEIC(1.5, 2.5, 3.6, 1.5, 1, 2, "");
+
+        REQUIRE(doctest::Approx(eic1->mzmin) == 1.7f);
+        REQUIRE(doctest::Approx(eic1->mzmax) == 2.5f);
+        REQUIRE(doctest::Approx(eic1->rtmin) == 0);
+        REQUIRE(doctest::Approx(eic1->rtmax) == 0);
+
+        eic1 = mzsample.getEIC("", 1);
+        REQUIRE(doctest::Approx(eic1->mzmin) == 0);
+        REQUIRE(doctest::Approx(eic1->mzmax) == 0);
+        REQUIRE(doctest::Approx(eic1->rtmin) == 0);
+        REQUIRE(doctest::Approx(eic1->rtmax) == 0);
+    }
+
+    SUBCASE("Testing TIC and BIC functions")
+    {
+        EIC* eic1;
+
+        mzSample mzsample;
+        Scan* scan1 = new Scan(&mzsample, 1, 2, 0.197233f, 8.817f, 0);
+        scan1->filterLine = "test";
+        mzsample.scans.push_back(scan1);
+
+        Scan* scan2 = new Scan(&mzsample, 2, 2, 0.333f, 238.817f, 0);
+        scan2->filterLine = "test";
+        mzsample.scans.push_back(scan2);
+
+        eic1 = mzsample.getEIC(1.5, 3.6, 1, "test", 10.0, 10.0);
+        REQUIRE(eic1->intensity.size() == 1);
+
+        mzsample.minRt = 1.5;
+        mzsample.maxRt = 1.5;
+        eic1 = mzsample.getTIC(1.2, 2.0, 2);
+        REQUIRE(eic1->intensity.size() == 2);
+
+        eic1 = mzsample.getBIC(1.5, 3.6, 2);
+        REQUIRE(eic1->intensity.size() == 2);
+    }
 }

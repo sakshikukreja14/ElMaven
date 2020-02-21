@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
-
+#include "pathway.h"
 //non gui qt classes
 #include <QString>
 

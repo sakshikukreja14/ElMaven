@@ -235,7 +235,7 @@ void TreeDockWidget::setInfo(vector<mzLink>& links) {
     treeWidget->setSortingEnabled(false);
 
     auto item0 = new NumericTreeWidgetItem(treeWidget,mzLinkType);
-    item0->setText(0,QString::number(links[0].mz1,'f',4));
+    item0->setText(0,QString::number(links[0].mz1(),'f',4));
     item0->setExpanded(true);
     for(int i=0; i < links.size(); i++) addLink(&links[i],item0);
 
@@ -255,8 +255,8 @@ QTreeWidgetItem* TreeDockWidget::addLink(mzLink* s,QTreeWidgetItem* parent)  {
         }
 
         if ( item ) {
-                item->setText(0,QString::number(s->mz2,'f',4));
-                item->setText(1,QString::number(s->correlation,'f',2));
+            item->setText(0,QString::number(s->mz2(),'f',4));
+            item->setText(1,QString::number(s->correlation(),'f',2));
                 item->setText(2,QString(s->note.c_str()));
         }
         return item;

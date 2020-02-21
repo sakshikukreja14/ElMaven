@@ -558,6 +558,7 @@ class CSVReportFixture
         const char* loadCompoundDB = "bin/methods/KNOWNS.csv";
         database.loadCompoundCSVFile(loadCompoundDB);
         vector<Compound*> compounds = database.getCompoundsSubset("KNOWNS");
+        sort(begin(_samples), end(_samples), mzSample::compSampleSort);
         _loadSamplesAndParameters(_samples, _mavenparameters);
         PeakDetector peakDetector;
         peakDetector.setMavenParameters(_mavenparameters);
@@ -569,6 +570,7 @@ class CSVReportFixture
 
     vector<PeakGroup> _getUntargetedGroups()
     {
+        sort(begin(_samples), end(_samples), mzSample::compSampleSort);
         _loadSamplesAndParameters(_samples, _mavenparameters);
         PeakDetector peakDetector;
         peakDetector.setMavenParameters(_mavenparameters);
@@ -661,6 +663,7 @@ class CSVReportFixture
     {
         return _isotopeGroups;
     }
+
 };
 
 TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
@@ -680,6 +683,12 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
                            true,
                            mavenparameter);
         auto allgroup = allgroups();
+        sort(allgroup.begin(), allgroup.end(), [](PeakGroup& a, PeakGroup& b) {
+            if(a.getCompound()->name == b.getCompound()->name)
+                return (a.meanRt < b.meanRt);
+            else
+                    return (a.getCompound()->name < b.getCompound()->name);
+        });
         for (int i = 0; i < static_cast<int>(allgroups().size()); i++) {
             PeakGroup* peakGroup = new PeakGroup(allgroup[i]);
             csvReports->addGroup(peakGroup);
@@ -695,65 +704,33 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
         getline(savedGroupFile, headerSaved);
         getline(savedGroupFile, headerSaved);
 
-        int cnt = 0;
         while (!inputGroupFile.eof()) {
-            cnt++;
             string input;
             getline(inputGroupFile, input);
             if (input.empty())
                 continue;
-
-            if (input.size() > 0) {
+            if(input.size() > 0){
                 vector<string> inputValues;
                 mzUtils::splitNew(input, ",", inputValues);
-                if (cnt > 1) {
-                    savedGroupFile.clear();
-                    savedGroupFile.seekg(0, ios::beg);
-                    string headerSaved;
-                    getline(savedGroupFile, headerSaved);
-                    getline(savedGroupFile, headerSaved);
-                }
-
-                while (!savedGroupFile.eof()) {
-                    string saved;
-                    getline(savedGroupFile, saved);
-                    if (saved.empty())
-                        continue;
-
-                    vector<string> savedValues;
-                    mzUtils::splitNew(saved, ",", savedValues);
-
-                    if (string2float(inputValues[4])
-                            == doctest::Approx(string2float(savedValues[4]))
-                        && string2float(inputValues[5])
-                               == doctest::Approx(string2float(savedValues[5]))
-                        &&
-                        /*epsilon value has to be a greater term i.e 15% as
-                          inputValue[12] is parts per millions. Thus, it may
-                          show a more deviation that normal */
-                        string2float(inputValues[13])
-                            == doctest::Approx(string2float(savedValues[13]))
-                                   .epsilon(0.15)
-                        && inputValues[9] == savedValues[9]) {
-                        double inputFloat;
-                        double savedFloat;
-                        for (int i = 3;
-                             i < static_cast<int>(inputValues.size());
-                             i++) {
-                            if (i == 9 || i == 10 || i == 11) {
-                                REQUIRE(inputValues[i] == savedValues[i]);
-                            } else if (i == 7) {
-                                // adducts
-                                REQUIRE (inputValues[i] == savedValues[i]);
-                            } else {
-                                inputFloat = string2float(inputValues[i]);
-                                savedFloat = string2float(savedValues[i]);
-                                REQUIRE(inputFloat
-                                        == doctest::Approx(savedFloat)
-                                               .epsilon(0.15));
-                            }
-                        }
-                        break;
+                string saved;
+                getline(savedGroupFile, saved);
+                vector<string> savedValues;
+                mzUtils::splitNew(saved, ",", savedValues);
+                double inputFloat;
+                double savedFloat;
+                for (size_t i = GroupReport::GoodPeakCount;
+                     i < inputValues.size();
+                     ++i) {
+                    if (i == GroupReport::IsotopeLabel ||
+                        i == GroupReport::CompoundGroup ||
+                        i == GroupReport::CompoundId) {
+                        REQUIRE(inputValues[i] == savedValues[i]);
+                    } else {
+                        inputFloat = string2float(inputValues[i]);
+                        savedFloat = string2float(savedValues[i]);
+                        REQUIRE(inputFloat
+                                == doctest::Approx(savedFloat)
+                                       .epsilon(0.15));
                     }
                 }
             }
@@ -780,6 +757,12 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
                            mavenparameter);
 
         auto allgroup = allgroups();
+        sort(allgroup.begin(), allgroup.end(), [](PeakGroup& a, PeakGroup& b) {
+            if(a.getCompound()->name == b.getCompound()->name)
+                return (a.meanRt < b.meanRt);
+            else
+                return (a.getCompound()->name < b.getCompound()->name);
+        });
         for (int i = 0; i < static_cast<int>(allgroup.size()); i++) {
             PeakGroup* peakGroup = new PeakGroup(allgroup[i]);
             csvReports->addGroup(peakGroup);
@@ -795,9 +778,7 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
         string headerSaved;
         getline(savedPeakFile, headerSaved);
 
-        int cnt = 0;
         while (!inputPeakFile.eof()) {
-            cnt++;
             string input;
             getline(inputPeakFile, input);
 
@@ -805,43 +786,28 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
                 vector<string> inputValues;
                 mzUtils::splitNew(input, ",", inputValues);
 
-                if (cnt > 1) {
-                    savedPeakFile.clear();
-                    savedPeakFile.seekg(0, ios::beg);
-                    string headerSaved;
-                    getline(savedPeakFile, headerSaved);
-                }
+                string saved;
+                getline(savedPeakFile, saved);
+                vector<string> savedValues;
+                mzUtils::splitNew(saved, ",", savedValues);
 
-                while (!savedPeakFile.eof()) {
-                    string saved;
-                    getline(savedPeakFile, saved);
-                    vector<string> savedValues;
-                    mzUtils::splitNew(saved, ",", savedValues);
-                    if (string2float(inputValues[8])
-                            == doctest::Approx(string2float(savedValues[8]))
-                        && string2float(inputValues[12])
-                               == doctest::Approx(string2float(savedValues[12]))
-                        && inputValues[2] == savedValues[2]) {
-                        double inputFloat;
-                        double savedFloat;
-                        for (int i = 1;
-                             i < static_cast<int>(inputValues.size());
-                             i++) {
-                            if (i == 1 || i == 2 || i == 3) {
-                                REQUIRE(inputValues[i] == savedValues[i]);
-                            } else if (i == 4)
-                                continue;
-                            else {
-                                inputFloat = string2float(inputValues[i]);
-                                savedFloat = string2float(savedValues[i]);
-                                REQUIRE(inputFloat
-                                        == doctest::Approx(savedFloat)
-                                               .epsilon(0.15));
-                            }
-                        }
-                        break;
+                double inputFloat;
+                double savedFloat;
+                for (size_t i = 1; i < inputValues.size(); i++) {
+                    if (i == PeakReport::CompoundPeak ||
+                        i == PeakReport::CompoundIdPeak ||
+                        i == PeakReport::FormulaPeak ||
+                        i == PeakReport::Sample) {
+                        REQUIRE(inputValues[i] == savedValues[i]);
                     }
-                }
+                    else {
+                        inputFloat = string2float(inputValues[i]);
+                        savedFloat = string2float(savedValues[i]);
+                        REQUIRE(inputFloat
+                                == doctest::Approx(savedFloat)
+                                       .epsilon(0.15));
+                        }
+                    }
             }
         }
         inputPeakFile.close();
@@ -865,7 +831,6 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
                            mavenparameter);
         std::list<PeakGroup> group = isotopeGroup();
         csvReports->writeDataForPolly(pollyFile, group);
-
         ifstream inputPeakFile("polly.csv");
         ifstream savedPeakFile("tests/test-libmaven/test_polly.csv");
 
@@ -874,36 +839,18 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
         string headerSaved;
         getline(savedPeakFile, headerSaved);
 
-        int cnt = 0;
         while (!inputPeakFile.eof()) {
-            cnt++;
             string input;
             getline(inputPeakFile, input);
-
             if (input.size() > 0) {
                 vector<string> inputValues;
                 mzUtils::splitNew(input, ",", inputValues);
-
-                if (cnt > 1) {
-                    savedPeakFile.clear();
-                    savedPeakFile.seekg(0, ios::beg);
-                    string headerSaved;
-                    getline(savedPeakFile, headerSaved);
-                }
-
-                while (!savedPeakFile.eof()) {
-                    string saved;
-                    getline(savedPeakFile, saved);
-                    vector<string> savedValues;
-                    mzUtils::splitNew(saved, ",", savedValues);
-
-                    if (inputValues[1] == savedValues[1]
-                        && inputValues[2] == savedValues[2]) {
-                        for (size_t i = 0; i < inputValues.size(); i++)
-                            REQUIRE(inputValues[i] == savedValues[i]);
-                        break;
-                    }
-                }
+                string saved;
+                getline(savedPeakFile, saved);
+                vector<string> savedValues;
+                mzUtils::splitNew(saved, ",", savedValues);
+                for (size_t i = 0; i < inputValues.size(); i++)
+                    REQUIRE(inputValues[i] == savedValues[i]);
             }
         }
         inputPeakFile.close();
@@ -1001,7 +948,7 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
         remove("groupReport.csv");
     }
 
-    SUBCASE("Testing Untargeted Peak File")
+    SUBCASE("Testing Untargetted Peak File")
     {
         untargetedGroup();
         string peakReport = "peakReport.csv";
@@ -1059,20 +1006,29 @@ TEST_CASE_FIXTURE(CSVReportFixture, "Testing Targeted Groups")
                     vector<string> savedValues;
                     mzUtils::splitNew(saved, ",", savedValues);
 
-                    if (string2float(inputValues[16])
-                            == doctest::Approx(string2float(savedValues[16]))
+                    if (string2float(inputValues[PeakReport::PeakAreaCorrected])
+                            == doctest::Approx(
+                                   string2float(
+                                       savedValues
+                                           [PeakReport::PeakAreaCorrected]))
                                    .epsilon(0.0005)
-                        && string2float(inputValues[12])
-                               == doctest::Approx(string2float(savedValues[12]))
+                        && string2float(inputValues[PeakReport::PeakIntensity])
+                               == doctest::Approx(
+                                      string2float(
+                                          savedValues
+                                              [PeakReport::PeakIntensity]))
                                       .epsilon(0.0005)
-                        && inputValues[4] == savedValues[4]
-                        && string2float(inputValues[11])
-                               == doctest::Approx(string2float(savedValues[11]))
+                        && inputValues[PeakReport::Sample]
+                               == savedValues[PeakReport::Sample]
+                        && string2float(inputValues[PeakReport::Quality])
+                               == doctest::Approx(
+                                      string2float(
+                                          savedValues[PeakReport::Quality]))
                                       .epsilon(0.0005)) {
                         double inputFloat;
                         double savedFloat;
                         for (size_t i = 3; i < inputValues.size(); i++) {
-                            if (i == 4) {
+                            if (i == PeakReport::Sample) {
                                 REQUIRE(inputValues[i] == savedValues[i]);
                             } else {
                                 inputFloat = string2float(inputValues[i]);

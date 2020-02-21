@@ -66,7 +66,9 @@
 #include "treemap.h"
 #include "updatedialog.h"
 #include "videoplayer.h"
-#include "eiclogic.h"
+#include "reaction.h"
+#include "pathway.h"
+#include "mzlink.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -4198,22 +4200,22 @@ void MainWindow::getLinks(Peak* peak) {
 	//correlations
 	float rtmin = peak->rtmin - 1;
 	float rtmax = peak->rtmax + 1;
-	for (int i = 0; i < links.size(); i++) {
-		links[i].correlation = sample->correlation(links[i].mz1, links[i].mz2,
-			massCutoff, rtmin, rtmax, mavenParameters->eicType, mavenParameters->filterline);
+        for (int i = 0; i < links.size(); i++) {
+            links[i].setCorrelation (sample->correlation(links[i].mz1(), links[i].mz2(),
+                                                        massCutoff, rtmin, rtmax, mavenParameters->eicType, mavenParameters->filterline));
 	}
 
 	//matching compounds
 	for (int i = 0; i < links.size(); i++) {
-		QSet<Compound*> compunds = massCalcWidget->findMathchingCompounds(
-				links[i].mz2, massCutoff, mavenParameters->getCharge());
+                QSet<Compound*> compunds = massCalcWidget->findMathchingCompounds(
+                links[i].mz2(), massCutoff, mavenParameters->getCharge());
 		if (compunds.size() > 0)
-			Q_FOREACH( Compound*c, compunds){ links[i].note += " |" + c->name; break;}
+                        Q_FOREACH( Compound*c, compunds){ links[i].note += " |" + c->name; break;}
 	}
 
 	vector<mzLink> subset;
-	for (int i = 0; i < links.size(); i++) {
-		if (links[i].correlation > 0.5)
+        for (int i = 0; i < links.size(); i++) {
+            if (links[i].correlation() > 0.5)
 			subset.push_back(links[i]);
 	}
 	if (subset.size())

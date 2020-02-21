@@ -95,7 +95,8 @@ INCLUDEPATH +=  $$top_srcdir/src/core/libmaven  \
                 $$top_srcdir/src/projectDB \
                 $$top_srcdir/3rdparty/libsvm \
                 $$top_srcdir/3rdparty/libmgf \
-                $$top_srcdir/src/
+                $$top_srcdir/src/           \
+                $$top_srcdir/src/core/libmaven/datastructures
 
 QMAKE_LFLAGS += -L$$top_builddir/libs/
 

@@ -23,8 +23,8 @@ INCLUDEPATH += $$top_srcdir/src/core/libmaven \
                $$top_srcdir/3rdparty/ErrorHandling \
                $$top_srcdir/3rdparty/Logger \
                $$top_srcdir/src/pollyCLI \
-               /usr/local/include/
-
+               /usr/local/include/       \
+               $$top_srcdir/src/core/libmaven/datastructures
 SOURCES	= connection.cpp \
           cursor.cpp \
           projectdatabase.cpp \

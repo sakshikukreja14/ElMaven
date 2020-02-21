@@ -1,4 +1,5 @@
 #include "background_peaks_update.h"
+#include "isotope.h"
 #include "Compound.h"
 #include "datastructures/mzSlice.h"
 #include "eiclogic.h"
@@ -277,7 +278,7 @@ void IsotopeWidget::computeIsotopes(string f)
 				isotopeParameters->_scan, x.mass - mzWindow, x.mass + mzWindow);
 			float isotopePeakIntensity = child.first;
 
-			mzLink link;
+
 			bool filterIsotope = false;
 
 			filterIsotope = isotopeDetector->filterIsotope(x, 
@@ -288,12 +289,11 @@ void IsotopeWidget::computeIsotopes(string f)
 
 			if (filterIsotope)
 				isotopePeakIntensity = 0;
-
-			link.mz1 = parentMass;
-			link.mz2 = x.mass;
-			link.note = x.name;
-			link.value1 = x.abundance;
-			link.value2 = isotopePeakIntensity;
+                        mzLink link(parentMass,
+                                    x.mass,
+                                    x.abundance,
+                                    isotopePeakIntensity,
+                                    x.name);
 			isotopeParameters->links.push_back(link);
 		}
 	}
@@ -327,13 +327,13 @@ void IsotopeWidget::populateByParentGroup(vector<Isotope> masslist, double paren
         auto quantity = child.getOrderedIntensityVector(samples,
                                                         _mw->getUserQuantType()).at(0);
 
-		mzLink link;
-		link.mz1 = parentMass;
-		link.mz2 = child.expectedMz;
-		link.note = isotopeName;
-        link.value1 = child.expectedAbundance;
-        link.value2 = quantity;
-		isotopeParameters->links.push_back(link);
+        mzLink link(parentMass,
+                    child.expectedMz,
+                    child.expectedAbundance,
+                    quantity,
+                    isotopeName);
+
+        isotopeParameters->links.push_back(link);
 	}
 }
 
@@ -585,34 +585,34 @@ void IsotopeWidget::showTable()
 	//link.mz2 is isotope m/z
 	//link.mz1 is parent m/z
 	for (unsigned int i = 0; i < isotopeParameters->links.size(); i++)
-	{
-		isotopeIntensitySum += isotopeParameters->links[i].value2;
-		if (isotopeParameters->links[i].value1 > maxAbundance)
-			maxAbundance = isotopeParameters->links[i].value1;
+        {
+            isotopeIntensitySum += isotopeParameters->links[i].value2();
+            if (isotopeParameters->links[i].value1() > maxAbundance)
+                maxAbundance = isotopeParameters->links[i].value1();
 	}
 
 	for (unsigned int i = 0; i < isotopeParameters->links.size(); i++)
 	{
-		float frac = 0;
-		if (isotopeParameters->links[i].value2 == 0 && floor(isotopeParameters->links[i].value1 * 1e+6) == 0)
+                float frac = 0;
+                if (isotopeParameters->links[i].value2() == 0 && floor(isotopeParameters->links[i].value1() * 1e+6) == 0)
 			continue;
-		if (isotopeIntensitySum > 0)
-			frac = isotopeParameters->links[i].value2 / isotopeIntensitySum * 100;
+                if (isotopeIntensitySum > 0)
+                    frac = isotopeParameters->links[i].value2() / isotopeIntensitySum * 100;
 
 		NumericTreeWidgetItem *item = new NumericTreeWidgetItem(treeWidget,
 																mzSliceType);
-		QString item1 = QString(isotopeParameters->links[i].note.c_str());
-		QString item2 = QString::number(isotopeParameters->links[i].mz2, 'f',
-										5);
-		QString item3 = QString::number(isotopeParameters->links[i].value2, 'f',
+                QString item1 = QString(isotopeParameters->links[i].note.c_str());
+                QString item2 = QString::number(isotopeParameters->links[i].mz2(), 'f',
+                                                                                5);
+                QString item3 = QString::number(isotopeParameters->links[i].value2(), 'f',
 										4);
 		//%labeling
 		QString item4 = QString::number(frac, 'f', 4);
 		//%Expected abundance
-		QString item5 = QString::number(
-			isotopeParameters->links[i].value1 * 100, 'f', 4);
-		//%Relative abundance
-		QString item6 = QString::number(isotopeParameters->links[i].value1 / maxAbundance * 100, 'f', 4);
+                QString item5 = QString::number(
+                    isotopeParameters->links[i].value1() * 100, 'f', 4);
+                //%Relative abundance
+                QString item6 = QString::number(isotopeParameters->links[i].value1() / maxAbundance * 100, 'f', 4);
 
 		item->setText(0, item1);
 		item->setText(1, item2);

@@ -201,7 +201,7 @@ void ProjectDockWidget::prepareSampleCohortFile(QString sampleCohortFileName) {
 
         out << QString::fromStdString(sample->getSampleName()) << ","
             << QString::fromStdString(sample->getSetName()) << ","
-            << QString::number(sample->getNormalizationConstant()) << ","
+            << QString::number(sample->normalizationConstant()) << ","
             << injectionOrder << "\n";
 	}
 
@@ -236,7 +236,7 @@ void ProjectDockWidget::changeNormalizationConstant(QTreeWidgetItem* item, int c
         bool ok=false;
         float x = item->text(2).toFloat(&ok);
         if (ok) sample->setNormalizationConstant(x);
-        cerr <<"changeSampleSet: " << sample->sampleName << "  " << sample->getNormalizationConstant() << endl;
+        cerr <<"changeSampleSet: " << sample->sampleName << "  " << sample->normalizationConstant() << endl;
     }
 }
 
@@ -612,7 +612,7 @@ void ProjectDockWidget::setInfo(vector<mzSample*>&samples) {
         item->setData(0, Qt::UserRole,QVariant::fromValue(samples[i]));
         item->setIcon(1, QIcon(QPixmap(rsrcPath + "/edit.png")));
         item->setText(1, QString(sample->getSetName().c_str()));
-        item->setText(2, QString::number(sample->getNormalizationConstant(), 'f', 2));
+        item->setText(2, QString::number(sample->normalizationConstant(), 'f', 2));
         if( sample->getInjectionOrder() > 0 )
             item->setText(3, QString::number(sample->getInjectionOrder()));
         else

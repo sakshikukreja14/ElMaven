@@ -195,7 +195,7 @@ void JSONReports::_writeEIC(PeakGroup& grp, ofstream& filename, mzSample* sample
             //MS-MS case 2
             //TODO: this is a problem -- amuQ1 and amuQ3 that were used to generate the peakgroup are not stored anywhere
             //will use mainWindow->MavenParameters for now but those values may have changed between generation and export
-            eic =(sample)->getEIC(grp.getCompound()->precursorMz, grp.getCompound()->collisionEnergy, grp.getCompound()->productMz, _mavenParameters->eicType,
+            eic =(sample)->getEIC(grp.getCompound()->precursorMz, grp.getCompound()->productMz, _mavenParameters->eicType,
                                   _mavenParameters->filterline, _mavenParameters->amuQ1, _mavenParameters->amuQ3);
         } else {
             //MS1 case

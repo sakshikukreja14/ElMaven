@@ -21,7 +21,9 @@ INCLUDEPATH +=  $$top_srcdir/src/core/libmaven  $$top_srcdir/3rdparty/pugixml/sr
                 $$top_srcdir/3rdparty/obiwarp $$top_srcdir/src/pollyCLI \
                 $$top_srcdir/3rdparty/Eigen $$top_srcdir/src/      \
                 $$top_srcdir/3rdparty/doctest       \
-                $$top_srcdir/3rdparty/json
+                $$top_srcdir/3rdparty/json          \
+                $$top_srcdir/3rdparty/ErrorHandling \
+                $$top_srcdir/src/core/libmaven/datastructures
 macx {
 
     DYLIBPATH = $$system(source ~/.bash_profile ; echo $LDFLAGS)
@@ -47,9 +49,11 @@ macx {
 # Input
 HEADERS += \
     $$top_srcdir/src/core/libmaven/jsonReports.h        \
-    $$top_srcdir/src/core/libmaven/csvreports.h         
+    $$top_srcdir/src/core/libmaven/csvreports.h         \
+    $$top_srcdir/src/core/libmaven/mzSample.h
  
 SOURCES += \
     main.cpp \
     $$top_srcdir/src/core/libmaven/jsonReports.cpp      \
-    $$top_srcdir/src/core/libmaven/csvreports.cpp       
+    $$top_srcdir/src/core/libmaven/csvreports.cpp       \
+    $$top_srcdir/src/core/libmaven/mzSample.cpp

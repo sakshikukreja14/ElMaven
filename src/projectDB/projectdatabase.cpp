@@ -114,7 +114,7 @@ void ProjectDatabase::saveSamples(const vector<mzSample*>& samples)
         samplesQuery->bind(":color_blue", s->color[2]);
         samplesQuery->bind(":color_alpha", s->color[3]);
 
-        samplesQuery->bind(":norml_const", s->getNormalizationConstant());
+        samplesQuery->bind(":norml_const", s->normalizationConstant());
 
         samplesQuery->bind(":transform_a0", 0);
         samplesQuery->bind(":transform_a1", 0);

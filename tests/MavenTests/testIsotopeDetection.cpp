@@ -1,4 +1,5 @@
 #include "testIsotopeDetection.h"
+#include "isotope.h"
 #include "Compound.h"
 #include "constants.h"
 #include "classifierNeuralNet.h"
@@ -9,6 +10,7 @@
 #include "PeakDetector.h"
 #include "PeakGroup.h"
 #include "utilities.h"
+
 
 TestIsotopeDetection::TestIsotopeDetection() {
     loadCompoundDB = "bin/methods/KNOWNS.csv";

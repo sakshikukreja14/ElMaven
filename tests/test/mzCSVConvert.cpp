@@ -10,7 +10,7 @@ std::string myreplace(const std::string &sin,  std::string toReplace, std::strin
 }
 
 int main(int argc, char *argv[]) {
-
+/*
     for(int i=1; i<argc;i++) {
 	    string fileIn(argv[i]);
 	    mzSample* sample = new mzSample();
@@ -24,5 +24,5 @@ int main(int argc, char *argv[]) {
 	        sample->writeMzCSV(fileOut.c_str());       //write out file
         }
     }
-
+*/
 }

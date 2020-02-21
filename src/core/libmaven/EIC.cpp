@@ -7,6 +7,7 @@
 #include "mzSample.h"
 #include "SavGolSmoother.h"
 #include "Scan.h"
+#include "mzPoint.h"
 
 /**
  * @file EIC.cpp

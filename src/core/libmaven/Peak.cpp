@@ -3,6 +3,7 @@
 #include "Scan.h"
 #include "mzSample.h"
 #include "mzUtils.h"
+#include "mzlink.h"
 
 using namespace mzUtils;
 
@@ -220,12 +221,9 @@ vector<mzLink> Peak::findCovariants() {
         //float score=matchScore(yref, y );
         float score = mzUtils::correlation(yref,y);
         if ( (float) score < 0.5) continue;
-        mzLink link;
-        link.mz1 = peakMz;
-        link.mz2 = rmz/1000.0;
-        link.value1 = pos;
-        link.correlation = score;
-        link.note = "Covariant";
+        float mz2 = rmz/1000.0;
+
+        mzLink link(peakMz, mz2, pos, score,"Covariant");
         covariants.push_back(link);
     }
     return covariants;

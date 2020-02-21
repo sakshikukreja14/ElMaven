@@ -1,4 +1,5 @@
 #include "testMassCalculator.h"
+#include "isotope.h"
 #include "databases.h"
 #include "mzMassCalculator.h"
 #include "mzSample.h"

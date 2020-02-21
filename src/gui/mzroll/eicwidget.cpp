@@ -1,4 +1,5 @@
 #include "eicwidget.h"
+#include "mzPoint.h"
 #include "Compound.h"
 #include "EIC.h"
 #include "Peak.h"
@@ -1013,8 +1014,8 @@ void EicWidget::showPeakArea(Peak* peak) {
 
 	EicLine* line = new EicLine(0, scene());
 	line->setClosePath(true);
-	for (int i = 0; i < observed.size(); i++) {
-		line->addPoint(QPointF(toX(observed[i].x), toY(observed[i].y)));
+        for (int i = 0; i < observed.size(); i++) {
+            line->addPoint(QPointF(toX(observed[i].x()), toY(observed[i].y())));
 	}
 	QColor color = Qt::black;
 	line->setColor(color);
@@ -1392,12 +1393,12 @@ void EicWidget::addFitLine(PeakGroup* group) {
 
 		//find max point and total intensity
 		float sum = 0;
-		float maxpoint = 0;
-		float max = observed[0].y;
-		for (int i = 0; i < observed.size(); i++) {
-			sum += observed[i].y;
-			if (observed[i].y > max) {
-				max = observed[i].y;
+                float maxpoint = 0;
+                float max = observed[0].y();
+                for (int i = 0; i < observed.size(); i++) {
+                    sum += observed[i].y();
+                    if (observed[i].y() > max) {
+                            max = observed[i].y();
 				maxpoint = i;
 			}
 		}

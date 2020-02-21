@@ -7,6 +7,7 @@
 #include "masscutofftype.h"
 #include "mzSample.h"
 #include "mzUtils.h"
+#include "isotope.h"
 
 using namespace mzUtils;
 using namespace std;

@@ -9,8 +9,8 @@
 class Adduct;
 class Compound;
 class MassCutoff;
-class Pathway;
 class Peak;
+class Pathway;
 class Reaction;
 
 namespace bsignal = boost::signals2;
