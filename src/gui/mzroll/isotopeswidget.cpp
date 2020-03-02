@@ -91,7 +91,7 @@ void IsotopeWidget::peakSelected(Peak *peak, PeakGroup *group)
 		return;
 
     //set selectedSample for isotope calculation
-    _selectedSample = peak->getSample();
+    _selectedSample = peak->sample();
     setPeakGroupAndMore(group);
 
     sampleList->setCurrentText(QString::fromStdString(_selectedSample->sampleName));

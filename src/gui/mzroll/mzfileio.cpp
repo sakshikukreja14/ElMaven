@@ -1276,57 +1276,56 @@ PeakGroup* mzFileIO::readGroupXML(QXmlStreamReader& xml, PeakGroup* parent)
 void mzFileIO::readPeakXML(QXmlStreamReader& xml, PeakGroup* parent)
 {
     Peak p;
-    p.pos = xml.attributes().value("pos").toString().toInt();
-    p.minpos = xml.attributes().value("minpos").toString().toInt();
-    p.maxpos = xml.attributes().value("maxpos").toString().toInt();
-    p.splineminpos = xml.attributes().value("splineminpos").toString().toInt();
-    p.splinemaxpos = xml.attributes().value("splinemaxpos").toString().toInt();
-    p.rt = xml.attributes().value("rt").toString().toDouble();
-    p.rtmin = xml.attributes().value("rtmin").toString().toDouble();
-    p.rtmax = xml.attributes().value("rtmax").toString().toDouble();
-    p.mzmin = xml.attributes().value("mzmin").toString().toDouble();
-    p.mzmax = xml.attributes().value("mzmax").toString().toDouble();
-    p.scan = xml.attributes().value("scan").toString().toInt();
-    p.minscan = xml.attributes().value("minscan").toString().toInt();
-    p.maxscan = xml.attributes().value("maxscan").toString().toInt();
-    p.peakArea = xml.attributes().value("peakArea").toString().toDouble();
-    p.peakSplineArea =
-        xml.attributes().value("peakSplineArea").toString().toDouble();
-    p.peakAreaCorrected =
-        xml.attributes().value("peakAreaCorrected").toString().toDouble();
-    p.peakAreaTop = xml.attributes().value("peakAreaTop").toString().toDouble();
-    p.peakAreaTopCorrected =
-        xml.attributes().value("peakAreaTopCorrected").toString().toDouble();
-    p.peakAreaFractional =
-        xml.attributes().value("peakAreaFractional").toString().toDouble();
-    p.peakRank = xml.attributes().value("peakRank").toString().toDouble();
-    p.peakIntensity =
-        xml.attributes().value("peakIntensity").toString().toDouble();
-    p.peakBaseLineLevel =
-        xml.attributes().value("peakBaseLineLevel").toString().toDouble();
-    p.peakMz = xml.attributes().value("peakMz").toString().toDouble();
-    p.medianMz = xml.attributes().value("medianMz").toString().toDouble();
-    p.baseMz = xml.attributes().value("baseMz").toString().toDouble();
-    p.quality = xml.attributes().value("quality").toString().toDouble();
-    p.width = xml.attributes().value("width").toString().toInt();
-    p.gaussFitSigma =
-        xml.attributes().value("gaussFitSigma").toString().toDouble();
-    p.gaussFitR2 = xml.attributes().value("gaussFitR2").toString().toDouble();
-    p.groupNum = xml.attributes().value("groupNum").toString().toInt();
-    p.noNoiseObs = xml.attributes().value("noNoiseObs").toString().toInt();
-    p.noNoiseFraction =
-        xml.attributes().value("noNoiseFraction").toString().toDouble();
-    p.symmetry = xml.attributes().value("symmetry").toString().toDouble();
-    p.signalBaselineRatio =
-        xml.attributes().value("signalBaselineRatio").toString().toDouble();
-    p.groupOverlap =
-        xml.attributes().value("groupOverlap").toString().toDouble();
-    p.groupOverlapFrac =
-        xml.attributes().value("groupOverlapFrac").toString().toDouble();
-    p.localMaxFlag = xml.attributes().value("localMaxFlag").toString().toInt();
-    p.fromBlankSample =
-        xml.attributes().value("fromBlankSample").toString().toInt();
-    p.label = xml.attributes().value("label").toString().toInt();
+    p.setPos (xml.attributes().value("pos").toString().toInt());
+    p.setMinpos (xml.attributes().value("minpos").toString().toInt());
+    p.setMaxpos (xml.attributes().value("maxpos").toString().toInt());
+    p.setSplineminpos (xml.attributes().value("splineminpos").toString().toInt());
+    p.setSplinemaxpos (xml.attributes().value("splinemaxpos").toString().toInt());
+    p.setRt (xml.attributes().value("rt").toString().toDouble());
+    p.setRtmin (xml.attributes().value("rtmin").toString().toDouble());
+    p.setRtmax (xml.attributes().value("rtmax").toString().toDouble());
+    p.setMzmin (xml.attributes().value("mzmin").toString().toDouble());
+    p.setMzmax (xml.attributes().value("mzmax").toString().toDouble());
+    p.setScan (xml.attributes().value("scan").toString().toInt());
+    p.setMinscan (xml.attributes().value("minscan").toString().toInt());
+    p.setMaxscan (xml.attributes().value("maxscan").toString().toInt());
+    p.setPeakArea (xml.attributes().value("peakArea").toString().toDouble());
+    p.setPeakSplineArea(
+        xml.attributes().value("peakSplineArea").toString().toDouble());
+    p.setPeakAreaCorrected(
+        xml.attributes().value("peakAreaCorrected").toString().toDouble());
+    p.setPeakAreaTop (xml.attributes().value("peakAreaTop").toString().toDouble());
+    p.setPeakAreaTopCorrected(
+        xml.attributes().value("peakAreaTopCorrected").toString().toDouble());
+    p.setPeakAreaFractional(
+        xml.attributes().value("peakAreaFractional").toString().toDouble());
+    p.setPeakRank (xml.attributes().value("peakRank").toString().toDouble());
+    p.setPeakIntensity (
+        xml.attributes().value("peakIntensity").toString().toDouble());
+    p.setPeakBaseLineLevel (
+        xml.attributes().value("peakBaseLineLevel").toString().toDouble());
+    p.setPeakMz (xml.attributes().value("peakMz").toString().toDouble());
+    p.setMedianMz (xml.attributes().value("medianMz").toString().toDouble());
+    p.setBaseMz (xml.attributes().value("baseMz").toString().toDouble());
+    p.setQuality (xml.attributes().value("quality").toString().toDouble());
+    p.setWidth (xml.attributes().value("width").toString().toInt());
+    p.setGaussFitSigma(
+        xml.attributes().value("gaussFitSigma").toString().toDouble());
+    p.setGaussFitR2 (xml.attributes().value("gaussFitR2").toString().toDouble());
+    p.setGroupNum (xml.attributes().value("groupNum").toString().toInt());
+    p.setNoNoiseObs (xml.attributes().value("noNoiseObs").toString().toInt());
+    p.setNoNoiseFraction(
+        xml.attributes().value("noNoiseFraction").toString().toDouble());
+    p.setSymmetry (xml.attributes().value("symmetry").toString().toDouble());
+    p.setSignalBaselineRatio (xml.attributes().value("signalBaselineRatio").toString().toDouble());
+    p.setGroupOverlap(
+        xml.attributes().value("groupOverlap").toString().toDouble());
+    p.setGroupOverlapFrac(
+        xml.attributes().value("groupOverlapFrac").toString().toDouble());
+    p.setLocalMaxFlag (xml.attributes().value("localMaxFlag").toString().toInt());
+    p.setFromBlankSample(
+        xml.attributes().value("fromBlankSample").toString().toInt());
+    p.setLabel(xml.attributes().value("label").toString().toInt());
     string sampleName =
         xml.attributes().value("sample").toString().toStdString();
     vector<mzSample*> samples = _mainwindow->getSamples();

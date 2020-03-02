@@ -38,10 +38,10 @@ void AlignmentVizAllGroupsWidget::plotGraph(QList<PeakGroup> allgroups) {
     Q_FOREACH(PeakGroup grp, allgroups) {
         for(unsigned int i=0;i<grp.getPeaks().size();i++) {
             Peak peak = grp.getPeaks().at(i);
-            mzSample* sample = peak.getSample();
-            retentionTime[sample] << peak.rt;
-            retentionTimeDeviation[sample] << peak.rt - grp.medianRt();
-            pairPeakGroup[make_pair(peak.rt, peak.rt - grp.medianRt())] = grp;
+            mzSample* sample = peak.sample();
+            retentionTime[sample] << peak.rt();
+            retentionTimeDeviation[sample] << peak.rt() - grp.medianRt();
+            pairPeakGroup[make_pair(peak.rt(), peak.rt() - grp.medianRt())] = grp;
         }
     }
 

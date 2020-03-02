@@ -34,11 +34,11 @@ float getAvgPeakAreaFractional(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=grp->peaks[i].peakAreaFractional;
+                        validPeaks++;
+                        sum+=grp->peaks[i].peakAreaFractional();
 		}
 	}
 	return sum / float(validPeaks);
@@ -48,11 +48,11 @@ float getAvgNoNoiseFraction(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=grp->peaks[i].noNoiseFraction;
+                        validPeaks++;
+                        sum+=grp->peaks[i].noNoiseFraction();
 		}
 	}
 	return sum / float(validPeaks);
@@ -62,11 +62,11 @@ float getAvgSymmetry(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=grp->peaks[i].symmetry;
+                        validPeaks++;
+                        sum+=grp->peaks[i].symmetry();
 		}
 	}
 	return sum / float(validPeaks);
@@ -76,11 +76,11 @@ float getAvgWidth(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=grp->peaks[i].width;
+                        validPeaks++;
+                        sum+=grp->peaks[i].width();
 		}
 	}
 	return sum / float(validPeaks);
@@ -90,11 +90,11 @@ float getLogAvgSignalBaselineRatio(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=log2(grp->peaks[i].signalBaselineRatio);
+                        validPeaks++;
+                        sum+=log2(grp->peaks[i].signalBaselineRatio());
 		}
 	}
 	return exp2(sum / float(validPeaks));
@@ -104,11 +104,11 @@ float getLogAvgPeakIntensity(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=log(grp->peaks[i].peakIntensity);
+                        validPeaks++;
+                        sum+=log(grp->peaks[i].peakIntensity());
 		}
 	}
 	return exp(sum / float(validPeaks));
@@ -116,13 +116,13 @@ float getLogAvgPeakIntensity(PeakGroup* grp)
 
 float getMinGaussFitR2(PeakGroup* grp)
 {
-	int i = 0;
-	while(grp->peaks[i].width < 0 && i < grp->peaks.size()) i++;
-	float minGaussFitR2 = grp->peaks[i].gaussFitR2;
-	while(i < grp->peaks.size()) {
-		if (grp->peaks[i].width > 0) {
-			if (grp->peaks[i].gaussFitR2 < minGaussFitR2) {
-				minGaussFitR2 = grp->peaks[i].gaussFitR2;
+        int i = 0;
+        while(grp->peaks[i].width() < 0 && i < grp->peaks.size()) i++;
+        float minGaussFitR2 = grp->peaks[i].gaussFitR2();
+        while(i < grp->peaks.size()) {
+            if (grp->peaks[i].width() > 0) {
+                if (grp->peaks[i].gaussFitR2() < minGaussFitR2) {
+                    minGaussFitR2 = grp->peaks[i].gaussFitR2();
 			}
 		}
 		i++;
@@ -134,11 +134,11 @@ float getGroupOverlapFrac(PeakGroup* grp)
 {
 	int validPeaks = 0;
 	float sum = 0;
-	for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
-		if (grp->peaks[i].width > 0)
+        for (unsigned int i=0; i < grp->peaks.size(); i++ ) {
+            if (grp->peaks[i].width() > 0)
 		{
-			validPeaks++;
-			sum+=exp(grp->peaks[i].groupOverlapFrac);
+                        validPeaks++;
+                        sum+=exp(grp->peaks[i].groupOverlapFrac());
 		}
 	}
 	return log(sum / float(validPeaks));

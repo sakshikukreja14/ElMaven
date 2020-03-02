@@ -39,7 +39,7 @@ EicPoint::EicPoint(float x, float y, Peak* peak, MainWindow* mw)
     forceFillColor(false);
 
     if (_peak) {
-        _cSize += 20*(_peak->quality);
+        _cSize += 20*(_peak->quality());
         //mouse press events
          connect(this, SIGNAL(peakSelected(Peak*)), mw, SLOT(showPeakInfo(Peak*)));
          connect(this, SIGNAL(peakSelected(Peak*)), mw->getEicWidget(), SLOT(showPeakArea(Peak*)));
@@ -87,33 +87,33 @@ void EicPoint::hoverEnterEvent (QGraphicsSceneHoverEvent*) {
 	}
 
 	string sampleName;
-    if (_peak && _peak->getSample() ) {
-        auto sample = _peak->getSample();
+    if (_peak && _peak->sample() ) {
+        auto sample = _peak->sample();
         QString sampleNumber =
             sample->sampleNumber != -1 ? QString::number(sample->sampleNumber)
                                        : "NA";
-        sampleName = _peak->getSample()->sampleName;
+        sampleName = _peak->sample()->sampleName;
 
         auto quantType = _mw->getUserQuantType();
-        float quantity = _peak->peakIntensity;
+        float quantity = _peak->peakIntensity();
         switch (quantType) {
             case PeakGroup::Area:
-                quantity = _peak->peakAreaCorrected;
+                quantity = _peak->peakAreaCorrected();
                 break;
             case PeakGroup::AreaTop:
-                quantity = _peak->peakAreaTopCorrected;
+                quantity = _peak->peakAreaTopCorrected();
                 break;
             case PeakGroup::AreaNotCorrected:
-                quantity = _peak->peakArea;
+                quantity = _peak->peakArea();
                 break;
             case PeakGroup::AreaTopNotCorrected:
-                quantity = _peak->peakAreaTop;
+                quantity = _peak->peakAreaTop();
                 break;
             case PeakGroup::Quality:
-                quantity = _peak->quality;
+                quantity = _peak->quality();
                 break;
             case PeakGroup::RetentionTime:
-                quantity = _peak->rt;
+                quantity = _peak->rt();
             default:
                 break;
         }
@@ -121,12 +121,12 @@ void EicPoint::hoverEnterEvent (QGraphicsSceneHoverEvent*) {
         setToolTip( "<b>  Sample: </b>"   + QString( sampleName.c_str() ) +
                    QString("<br> <b>%1: </b>").arg(_mw->quantType->currentText())
                    + QString::number(quantity) +
-                            "<br> <b>area: </b>" + 		  QString::number(_peak->peakAreaCorrected) +
-                            "<br> <b>Spline Area: </b>" + 		  QString::number(_peak->peakSplineArea) +
-                            "<br> <b>rt: </b>" +   QString::number(_peak->rt, 'f', 2 ) +
-                            "<br> <b>scan#: </b>" +   QString::number(_peak->scan ) +
+                   "<br> <b>area: </b>" + 		  QString::number(_peak->peakAreaCorrected()) +
+                   "<br> <b>Spline Area: </b>" + 		  QString::number(_peak->peakSplineArea()) +
+                   "<br> <b>rt: </b>" +   QString::number(_peak->rt(), 'f', 2 ) +
+                   "<br> <b>scan#: </b>" +   QString::number(_peak->scan() ) +
                             "<br> <b>sample number: </b>" + sampleNumber +
-                            "<br> <b>m/z: </b>" + QString::number(_peak->peakMz, 'f', 6 )
+                   "<br> <b>m/z: </b>" + QString::number(_peak->peakMz(), 'f', 6 )
                         );
 
 		update();
@@ -322,7 +322,7 @@ void EicPoint::linkCompound() {
             _group->getCompound()->setPeakGroup(*_group);
 
             //update compound retention time
-            if (_peak) _group->getCompound()->expectedRt=_peak->rt;
+            if (_peak) _group->getCompound()->expectedRt=_peak->rt();
 
             //log information about retention time change
            // _mw->getEicWidget()->addNote(_peak->peakMz,_peak->peakIntensity, "Compound Link");

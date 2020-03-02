@@ -188,38 +188,38 @@ void EicWidget::integrateRegion(float rtmin, float rtmax) {
 		Peak peak(eic, 0);
 
 		for (int j = 0; j < eic->size(); j++) {
-			if (eic->rt[j] >= rtmin && eic->rt[j] <= rtmax) {
-				if (peak.minpos == 0) {
-					peak.minpos = j;
-					peak.splineminpos = j;
-					peak.rtmin = eic->rt[j];
-				}
-				if (peak.maxpos < j) {
-					peak.maxpos = j;
-					peak.splinemaxpos = j;
-					peak.rtmax = eic->rt[j];
-				}
-				peak.peakArea += eic->intensity[j];
-				peak.rtmin = rtmin;
-				peak.rtmax = rtmax;
-				peak.mzmin = eicParameters->_slice.mzmin;
-				peak.mzmax = eicParameters->_slice.mzmax;
+                        if (eic->rt[j] >= rtmin && eic->rt[j] <= rtmax) {
+                            if (peak.minpos() == 0) {
+                                peak.setMinpos (j);
+                                peak.setSplineminpos (j);
+                                peak.setRtmin (eic->rt[j]);
+                            }
+                            if (peak.maxpos() < j) {
+                                peak.setMaxpos (j);
+                                peak.setSplinemaxpos (j);
+                                peak.setRtmax (eic->rt[j]);
+                            }
+                            peak.setPeakArea( peak.peakArea() +eic->intensity[j]);
+                            peak.setRtmin (rtmin);
+                            peak.setRtmax (rtmax);
+                            peak.setMzmin (eicParameters->_slice.mzmin);
+                            peak.setMzmax (eicParameters->_slice.mzmax);
 
-				if (eic->intensity[j] > peak.peakIntensity) {
-					peak.peakIntensity = eic->intensity[j];
-					peak.pos = j;
-					peak.rt = eic->rt[j];
-					peak.peakMz = eic->mz[j];
-				}
-			}
-		}
-		if (peak.pos > 0) {
+                            if (eic->intensity[j] > peak.peakIntensity()) {
+                                peak.setPeakIntensity(eic->intensity[j]);
+                                peak.setPos (j);
+                                peak.setRt (eic->rt[j]);
+                                peak.setPeakMz (eic->mz[j]);
+                        }
+                    }
+                }
+                if (peak.pos() > 0) {
 
 			eic->getPeakDetails(peak);
 
 			ClassifierNeuralNet* clsf = getMainWindow()->getClassifier();
-			if (clsf != NULL) {
-				peak.quality = clsf->scorePeak(peak);
+                        if (clsf != NULL) {
+                            peak.setQuality (clsf->scorePeak(peak));
 			}
 
 			bool isIsotope = false;
@@ -617,7 +617,7 @@ void EicWidget::addEICLines(bool showSpline,
         // sample stacking
         int zValue = 0;
         for (int j = 0; j < peaks.size(); j++) {
-            if (peaks[j].getSample() == eic->getSample()) {
+            if (peaks[j].sample() == eic->getSample()) {
                 zValue = j;
                 break;
             }
@@ -771,7 +771,7 @@ void EicWidget::addCubicSpline() {
         //sample stacking..
         int zValue=0;
         for(int j=0; j < peaks.size(); j++ ) {
-            if (peaks[j].getSample() == eic->getSample()) { zValue=j; break; }
+            if (peaks[j].sample() == eic->getSample()) { zValue=j; break; }
         }
 
 
@@ -994,11 +994,11 @@ void EicWidget::showPeakArea(Peak* peak) {
 	if (peak->hasEIC() == false)
 		return;
 
-	float rtWidth = peak->rtmax - peak->rtmin;
+        float rtWidth = peak->rtmax() - peak->rtmin();
 
 	//make sure that this is not a dead pointer to lost eic
 	bool matched = false;
-	EIC* eic = peak->getEIC();
+        EIC* eic = peak->eic();
 	for (int i = 0; i < eicParameters->eics.size(); i++)
 		if (eicParameters->eics[i] == eic) {
 			matched = true;
@@ -1222,17 +1222,17 @@ void EicWidget::addFocusLine(PeakGroup* group) {
 
 	if (group->peaks.size() > 0) {
 		Peak& selPeak = group->peaks[0];
-		for (int i = 1; i < group->peaks.size(); i++) {
-			if (group->peaks[i].peakIntensity > selPeak.peakIntensity) {
+                for (int i = 1; i < group->peaks.size(); i++) {
+                    if (group->peaks[i].peakIntensity() > selPeak.peakIntensity()) {
 				selPeak = group->peaks[i];
 			}
 		}
 		Scan* scan = selPeak.getScan();
 
 		if (getMainWindow()->spectraWidget
-				&& getMainWindow()->spectraWidget->isVisible()) {
-			getMainWindow()->spectraWidget->setScan(scan, selPeak.peakMz - 5,
-					selPeak.peakMz + 5);
+                                && getMainWindow()->spectraWidget->isVisible()) {
+                    getMainWindow()->spectraWidget->setScan(scan, selPeak.peakMz() - 5,
+                                                            selPeak.peakMz() + 5);
 		}
 	}
 	return;
@@ -1269,9 +1269,9 @@ void EicWidget::setBarplotPosition(PeakGroup* group) {
 	int count_right = 0, count_left = 0;
 
 	for(int i = 0; i < group->peaks.size(); i++) {
-		Peak& peak = group->peaks[i];
-		int x = toX(peak.rt);
-		int y = toY(peak.peakIntensity);
+                Peak& peak = group->peaks[i];
+                int x = toX(peak.rt());
+                int y = toY(peak.peakIntensity());
 		if(x >= xpos_right-legendShift-5 && x <= xpos_right+bwidth+5 && y <= ypos+bheight) count_right++;
 		if(x >= xpos_left-legendShift-5 && x <= xpos_left+bwidth+5 && y <= ypos+bheight) count_left++;
 	}
@@ -1382,11 +1382,11 @@ void EicWidget::addFitLine(PeakGroup* group) {
 		if (p.hasEIC() == false)
 			return;
 
-		float rtWidth = p.rtmax - p.rtmin;
+                float rtWidth = p.rtmax() - p.rtmin();
 		float rtStep = rtWidth / steps;
 		float s = 1.00;
 
-		EIC* eic = p.getEIC();
+                EIC* eic = p.eic();
 		vector<mzPoint> observed = eic->getIntensityVector(p);
 		if (observed.size() == 0)
 			return;
@@ -1423,10 +1423,10 @@ void EicWidget::addFitLine(PeakGroup* group) {
 		vector<float> x(steps);
 		vector<float> y(steps);
 
-		for (int i = 0; i < steps; i++) {
-			x[i] = p.rtmin + (float) i / steps * rtWidth;
-			y[i] = mzUtils::pertPDF(x[i], p.rtmin, p.rt, p.rtmax)
-					* p.peakIntensity / 3;
+                for (int i = 0; i < steps; i++) {
+                    x[i] = p.rtmin() + (float) i / steps * rtWidth;
+                    y[i] = mzUtils::pertPDF(x[i], p.rtmin(), p.rt(), p.rtmax())
+                           * p.peakIntensity() / 3;
 			if (y[i] < 1e-3)
 				y[i] = 0;
 			qDebug() << x[i] << " " << y[i] << endl;
@@ -1489,16 +1489,16 @@ void EicWidget::addPeakPositions(PeakGroup* group) {
 	for (unsigned int i = 0; i < group->peaks.size(); i++) {
 		Peak& peak = group->peaks[i];
 
-		if (peak.getSample() != NULL && peak.getSample()->isSelected == false)
+                if (peak.sample() != NULL && peak.sample()->isSelected == false)
 			continue;
-		if (eicParameters->_slice.rtmin != 0 && eicParameters->_slice.rtmax != 0
-				&& (peak.rt < eicParameters->_slice.rtmin
-						|| peak.rt > eicParameters->_slice.rtmax))
+                if (eicParameters->_slice.rtmin != 0 && eicParameters->_slice.rtmax != 0
+                    && (peak.rt() < eicParameters->_slice.rtmin
+                        || peak.rt() > eicParameters->_slice.rtmax))
 			continue;
 
 		QColor color = Qt::black;
-		if (peak.getSample() != NULL) {
-			mzSample* s = peak.getSample();
+                if (peak.sample() != NULL) {
+                        mzSample* s = peak.sample();
 			color = QColor::fromRgbF(s->color[0], s->color[1], s->color[2],
 					s->color[3]);
 		}
@@ -1507,7 +1507,7 @@ void EicWidget::addPeakPositions(PeakGroup* group) {
 		QBrush brush(color);
 		brush.setStyle(Qt::NoBrush);
 
-		EicPoint* p = new EicPoint(toX(peak.rt), toY(peak.peakIntensity), &peak,
+                EicPoint* p = new EicPoint(toX(peak.rt()), toY(peak.peakIntensity()), &peak,
 				getMainWindow());
 		if (setZValue)
 			p->setZValue(i);
@@ -1809,8 +1809,8 @@ void EicWidget::addNote() {
 
 void EicWidget::addNote(Peak* peak) {
 	//qDebug <<"EicWidget::addNote(Peak* peak) ";
-	QString text;
-	addNote(peak->rt, peak->peakIntensity, text);
+        QString text;
+        addNote(peak->rt(), peak->peakIntensity(), text);
 }
 
 void EicWidget::addNote(float rt, float intensity, QString text) {

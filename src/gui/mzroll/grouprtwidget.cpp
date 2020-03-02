@@ -273,7 +273,7 @@ vector<mzSample*> GroupRtWidget::getSamplesFromGroup(PeakGroup group) {
     vector<Peak>& peaks = group.getPeaks();
     vector<mzSample*> samples;
     for(unsigned int i=0; i < peaks.size(); i++ ) {
-        mzSample* s = peaks[i].getSample();
+        mzSample* s = peaks[i].sample();
         if (s->isSelected)
             samples.push_back(s);
     }
@@ -302,7 +302,7 @@ double GroupRtWidget::getRetentionTime(mzSample* sample, PeakGroup group) {
 
     double rt = -1;
     Peak* peak = group.getPeak(sample);
-    if (peak) rt = peak->rt;
+    if (peak) rt = peak->rt();
 
     return rt;
 }

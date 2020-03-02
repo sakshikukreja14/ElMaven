@@ -49,7 +49,7 @@ void TreeMap::drawMap() {
         PeakGroup* g = glist[i];
         if ( g ) {
             double area=0;
-            for(int j=0; j<g->peaks.size();j++) area += g->peaks[j].peakAreaCorrected;
+            for(int j=0; j<g->peaks.size();j++) area += g->peaks[j].peakAreaCorrected();
 			if ( area > 0 ) {
 					TreemapItem* treeItem = new TreemapItem(log2(area),Qt::gray);
 					treeItem->setGroup(g);

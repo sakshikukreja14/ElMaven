@@ -218,18 +218,18 @@ void SpectraWidget::setScan(Peak* peak)
 
     if (peak == NULL ) return;
 
-    mzSample* sample = peak->getSample();
+    mzSample* sample = peak->sample();
     if ( sample == NULL ) return;
 
-    Scan* scan = sample->getScan(peak->scan);
+    Scan* scan = sample->getScan(peak->scan());
     if ( scan == NULL ) return;
 
     setCurrentScan(scan);
 
-    _focusCoord = QPointF(peak->peakMz,peak->peakIntensity);
-    _minX = peak->peakMz-2;
-    _maxX = peak->peakMz+4;
-    _maxY = peak->peakIntensity*1.3;
+    _focusCoord = QPointF(peak->peakMz(),peak->peakIntensity());
+    _minX = peak->peakMz() -2;
+    _maxX = peak->peakMz() +4;
+    _maxY = peak->peakIntensity() *1.3;
     _minY = 0;
 
     //annotateScan(); //TODO: Sahil, Removed while merging spectrawidget
@@ -949,7 +949,7 @@ void SpectraWidget::mouseReleaseEvent(QMouseEvent *event)
 
 void SpectraWidget::setMzFocus(Peak* peak)
 {
-    setMzFocus(peak->peakMz);
+    setMzFocus(peak->peakMz());
 }
 
 void SpectraWidget::setMzFocus(float mz)

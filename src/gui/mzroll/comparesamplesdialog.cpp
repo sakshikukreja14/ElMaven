@@ -50,7 +50,7 @@ void CompareSamplesDialog::setTableWidget(TableDockWidget* w) {
 	QList<PeakGroup*> allgroups = table->getGroups();
 	Q_FOREACH (PeakGroup* group, allgroups){
 	for(int i=0; i < group->peakCount(); i++ ) {
-		mzSample* sample = group->peaks[i].getSample();
+                mzSample* sample = group->peaks[i].sample();
 		if (sample) samples.insert(sample);
 	}
 }

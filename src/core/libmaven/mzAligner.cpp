@@ -30,7 +30,7 @@ void Aligner::doAlignment(vector<PeakGroup*>& peakgroups)
 		PeakGroup* grp = allgroups.at(ii);
 		for (unsigned int jj = 0; jj < grp->getPeaks().size(); jj++) {
 			Peak peak = grp->getPeaks().at(jj);
-			deltaRt[make_pair(grp->getName(), peak.getSample()->getSampleName())] = peak.rt;
+                        deltaRt[make_pair(grp->getName(), peak.sample()->getSampleName())] = peak.rt();
 		}
 	}
 
@@ -39,7 +39,7 @@ void Aligner::doAlignment(vector<PeakGroup*>& peakgroups)
 	for (unsigned int i = 0; i < peakgroups.size(); i++) {
 		for ( unsigned int j = 0; j < peakgroups[i]->peakCount(); j++) {
 			Peak& p = peakgroups[i]->peaks[j];
-			mzSample* sample = p.getSample();
+                        mzSample* sample = p.sample();
 			if (sample) samplesSet.insert(sample);
 		}
 	}
@@ -69,7 +69,7 @@ void Aligner::doAlignment(vector<PeakGroup*>& peakgroups)
             PeakGroup* grp = allgroups.at(ii);
             for (unsigned int jj = 0; jj < grp->getPeaks().size(); jj++) {
                     Peak peak = grp->getPeaks().at(jj);
-                    deltaRt[make_pair(grp->getName(), peak.getSample()->getSampleName())] -= peak.rt;
+                    deltaRt[make_pair(grp->getName(), peak.sample()->getSampleName())] -= peak.rt();
             }
     }
 }
@@ -105,8 +105,8 @@ double Aligner::checkFit() {
 
 	double sumR2=0;
 	for(unsigned int i=0; i < allgroups.size(); i++ ) {
-		for(unsigned int j=0; j < allgroups[i]->peakCount(); j++ ) {
-			sumR2 += POW2(groupRt[i]-allgroups[i]->peaks[j].rt);
+                for(unsigned int j=0; j < allgroups[i]->peakCount(); j++ ) {
+                    sumR2 += POW2(groupRt[i]-allgroups[i]->peaks[j].rt());
                 }
         }
 	return sumR2;
@@ -129,15 +129,15 @@ void Aligner::PolyFit(int poly_align_degree) {
             map<int,int>duplicates;
 			for(unsigned int j=0; j < allgroups.size(); j++ ) {
 				Peak* p = allgroups[j]->getPeak(sample);
-				if (!p) continue;
-                if (!p || p->rt <= 0 || allGroupsMeansRt[j] <=0 ) continue;
+                                if (!p) continue;
+                                if (!p || p->rt() <= 0 || allGroupsMeansRt[j] <=0 ) continue;
 
-                int intTime = (int) p->rt*100;
+                                int intTime = (int)( p->rt()*100);
                 duplicates[intTime]++;
                 if ( duplicates[intTime] > 5 ) continue;
 
                 ref.push_back(allGroupsMeansRt[j]);
-				subj.push_back(p->rt);
+                subj.push_back(p->rt());
 				n++; 
 			}
 			if ( n < 10 ) continue;
@@ -164,7 +164,8 @@ void Aligner::PolyFit(int poly_align_degree) {
 
                     for(unsigned int ii=0; ii < allgroups.size(); ii++ ) {
                         Peak* p = allgroups[ii]->getPeak(sample);
-                        if (p)  p->rt = stats->predict(p->rt);
+                        if (p)
+                            p->setRt(stats->predict(p->rt()));
                     }
                 }
             } else 	{
@@ -204,15 +205,15 @@ void Aligner::Fit(int ideg) {
 			StatisticsVector<float>diff;
 			for(unsigned int j=0; j < allgroups.size(); j++ ) {
 				Peak* p = allgroups[j]->getPeak(sample);
-				if (!p) continue;
-				if (p->rt <= 0) continue;
+                                if (!p) continue;
+                                if (p->rt() <= 0) continue;
                 //if (p->quality < 0.5 ) continue;
-                int intTime = (int) p->rt*100;
+                                int intTime = (int)(p->rt()*100);
                 duplicates[intTime]++;
                 if ( duplicates[intTime] > 5 ) continue;
 
-				ref[n]=allgroups[j]->medianRt();
-				x[n]=p->rt; 
+                                ref[n]=allgroups[j]->medianRt();
+                                x[n]=p->rt();
 
                 diff.push_back(POW2(x[n]-ref[n]));
 				n++; 
@@ -294,9 +295,9 @@ void Aligner::Fit(int ideg) {
                 Peak* p = allgroups[ii]->getPeak(sample);
                 if (p) {
                     //float newrt = seval(n, p->rt, x, ref, b, c, d);
-                    double newrt = leasev(result, ideg, p->rt)-zeroOffset;
+                    double newrt = leasev(result, ideg, p->rt())-zeroOffset;
                     if (!std::isnan(newrt) && !std::isinf(newrt)) { //nan check
-                        p->rt = newrt;
+                        p->setRt(newrt);
                     } else {
                         //cerr << "Polynomial transformed failed! (peak)" << p->rt << endl;
                     }

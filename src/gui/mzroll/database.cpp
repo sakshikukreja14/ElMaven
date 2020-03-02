@@ -384,10 +384,10 @@ void Database::loadRetentionTimes(QString method) {
 
 void Database::saveValidation(Peak* p) {
         QSqlQuery query(ligandDB);
-	query.prepare("insert into validations (rt,mz,class) values(?,?,?)");
-	query.addBindValue(QString::number(p->rt,'f',4) );
-	query.addBindValue(QString::number(p->peakMz,'f',4) );
-	query.addBindValue(QString(p->label));
+        query.prepare("insert into validations (rt,mz,class) values(?,?,?)");
+        query.addBindValue(QString::number(p->rt(),'f',4) );
+        query.addBindValue(QString::number(p->peakMz(),'f',4) );
+        query.addBindValue(QString(p->label()));
 	if(!query.exec()) qDebug() << query.lastError();
 	query.clear();
 }

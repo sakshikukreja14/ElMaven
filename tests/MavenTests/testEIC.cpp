@@ -219,11 +219,11 @@ void TestEIC::testfindPeakBounds()
     e->findPeakBounds(e->peaks[10]);
 
     vector<float> intensity;
-    for(unsigned int i =  e->peaks[10].minpos ; i <= e->peaks[10].maxpos; i++) {
+    for(unsigned int i =  e->peaks[10].minpos() ; i <= e->peaks[10].maxpos(); i++) {
          intensity.push_back(e->intensity[i]);
     }
 
-    QVERIFY(TestUtils::floatCompare(*max_element(intensity.begin(), intensity.end()), e->intensity[e->peaks[10].pos]));
+    QVERIFY(TestUtils::floatCompare(*max_element(intensity.begin(), intensity.end()), e->intensity[e->peaks[10].pos()]));
    
 }
 
@@ -254,7 +254,7 @@ void TestEIC:: testGetPeakDetails()
     float peakArea = 0.;
     unsigned int noNoiseObs = 0;
     float baselineArea = 0.;
-    for(unsigned int i =  e->peaks[10].minpos ; i <= e->peaks[10].maxpos; i++) {
+    for(unsigned int i =  e->peaks[10].minpos() ; i <= e->peaks[10].maxpos(); i++) {
          intensity.push_back(e->intensity[i]);
          peakArea += e->intensity[i];
          baselineArea += e->baseline[i];
@@ -262,28 +262,28 @@ void TestEIC:: testGetPeakDetails()
     }
 
     float peakSplineArea = 0.0;
-    for (unsigned int j = e->peaks[10].splineminpos; j <= e->peaks[10].splinemaxpos; j++)
+    for (unsigned int j = e->peaks[10].splineminpos(); j <= e->peaks[10].splinemaxpos(); j++)
     {
         peakSplineArea += e->spline[j];
     }
 
     float peakAreaCorrected = peakArea - baselineArea;
 
-    QVERIFY(TestUtils::floatCompare(*max_element(intensity.begin(), intensity.end()), e->peaks[10].peakIntensity));
+    QVERIFY(TestUtils::floatCompare(*max_element(intensity.begin(), intensity.end()), e->peaks[10].peakIntensity()));
 
-    QVERIFY(e->peaks[10].noNoiseObs == noNoiseObs);
+    QVERIFY(e->peaks[10].noNoiseObs() == noNoiseObs);
 
-    QVERIFY(TestUtils::floatCompare(peakArea, e->peaks[10].peakArea));
+    QVERIFY(TestUtils::floatCompare(peakArea, e->peaks[10].peakArea()));
 
-    QVERIFY(TestUtils::floatCompare(peakSplineArea, e->peaks[10].peakSplineArea));
+    QVERIFY(TestUtils::floatCompare(peakSplineArea, e->peaks[10].peakSplineArea()));
 
-    QVERIFY(TestUtils::floatCompare(peakAreaCorrected, e->peaks[10].peakAreaCorrected));
+    QVERIFY(TestUtils::floatCompare(peakAreaCorrected, e->peaks[10].peakAreaCorrected()));
 
-    QVERIFY(TestUtils::floatCompare(peakAreaCorrected / (e->totalIntensity + 1), e->peaks[10].peakAreaFractional));
+    QVERIFY(TestUtils::floatCompare(peakAreaCorrected / (e->totalIntensity + 1), e->peaks[10].peakAreaFractional()));
     
-    QVERIFY(e->peaks[10].gaussFitSigma > 0);
+    QVERIFY(e->peaks[10].gaussFitSigma() > 0);
     
-    QVERIFY(e->peaks[10].gaussFitR2 > 0);
+    QVERIFY(e->peaks[10].gaussFitR2() > 0);
 }
 
 void TestEIC:: testgroupPeaks() {

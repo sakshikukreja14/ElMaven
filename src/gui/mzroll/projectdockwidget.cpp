@@ -1000,7 +1000,7 @@ void ProjectDockWidget::unloadSample(mzSample* sample) {
             vector<Peak>& peaks = grp->getPeaks();
             for(unsigned int j=0; j< peaks.size(); j++) {
                 Peak p = peaks.at(j);
-                if (p.getSample()->sampleName == sample->sampleName) {
+                if (p.sample()->sampleName == sample->sampleName) {
                     peaks.erase(peaks.begin()+j);
                 }
             }

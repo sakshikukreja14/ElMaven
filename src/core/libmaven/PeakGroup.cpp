@@ -194,8 +194,8 @@ bool PeakGroup::isMS1()
     if (peaks.size() == 0) return false;
 
     Peak peak = peaks[0];
-    if (peak.getSample()) {
-        Scan* scan = peak.getSample()->getScan(peak.scan);
+    if (peak.sample()) {
+        Scan* scan = peak.sample()->getScan(peak.scan());
         if (scan && scan->mslevel == 1)
             return true;
     }
@@ -227,8 +227,8 @@ void PeakGroup::setCompound(Compound* compound)
 
 void PeakGroup::addPeak(const Peak &peak)
 {
-	peaks.push_back(peak);
-	peaks.back().groupNum = groupId;
+        peaks.push_back(peak);
+        peaks.back().setGroupNum(groupId);
 }
 
 void PeakGroup::setSlice(const mzSlice& slice)
@@ -261,7 +261,7 @@ bool PeakGroup::sliceIsZero() const
 //TODO: a duplicate function getPeak exists. Delete this function
 Peak* PeakGroup::getSamplePeak(mzSample* sample) {
     for (unsigned int i=0; i< peaks.size(); i++ ) {
-        if (peaks[i].getSample() == sample ) return &peaks[i];
+        if (peaks[i].sample() == sample ) return &peaks[i];
     }
     return NULL;
 }
@@ -282,20 +282,20 @@ float PeakGroup::meanRtW() {
     if (peakCount() == 0) return 0;
 
     float mean=0; float Wtotal=0;
-    for(unsigned int i=0; i < peakCount(); i++ ) Wtotal +=peaks[i].peakIntensity;
+    for(unsigned int i=0; i < peakCount(); i++ ) Wtotal +=peaks[i].peakIntensity();
 
     if (Wtotal > 0 ) {
-        for(unsigned int i=0; i < peakCount(); i++ ) mean +=  peaks[i].peakIntensity/Wtotal * peaks[i].rt;
+        for(unsigned int i=0; i < peakCount(); i++ ) mean +=  peaks[i].peakIntensity()/Wtotal * peaks[i].rt();
         return mean;
     } else {
-        for(unsigned int i=0; i < peakCount(); i++ ) mean += peaks[i].rt;
+        for(unsigned int i=0; i < peakCount(); i++ ) mean += peaks[i].rt();
         return mean / peakCount();
     }
 }
 
 float PeakGroup::medianRt() {
     float * rts = new float[peaks.size()];
-    for(unsigned int i=0; i < peakCount(); i++ ) rts[i]=peaks[i].rt;
+    for(unsigned int i=0; i < peakCount(); i++ ) rts[i]=peaks[i].rt();
     float medianValue = mzUtils::median(rts, peakCount());
     delete[] rts;
     return medianValue;
@@ -356,21 +356,21 @@ vector<float> PeakGroup::getOrderedIntensityVector(vector<mzSample*>& samples, Q
 
     for( unsigned int j=0; j < peaks.size(); j++) {
         Peak& peak = peaks.at(j);
-        mzSample* sample = peak.getSample();
+        mzSample* sample = peak.sample();
 
         if ( sampleOrder.count(sample) > 0 ) {
             int s  = sampleOrder[ sample ];
             float y = 0;
             switch (type)  {
-                case AreaTop: y = peak.peakAreaTopCorrected; break;
-                case Area: y = peak.peakAreaCorrected; break;
-                case Height: y = peak.peakIntensity; break;
-                case AreaNotCorrected: y = peak.peakArea; break;
-                case AreaTopNotCorrected: y = peak.peakAreaTop; break;
-                case RetentionTime: y = peak.rt; break;
-                case Quality: y = peak.quality; break;
-                case SNRatio: y = peak.signalBaselineRatio; break;
-                default: y = peak.peakIntensity; break;
+            case AreaTop: y = peak.peakAreaTopCorrected(); break;
+            case Area: y = peak.peakAreaCorrected(); break;
+            case Height: y = peak.peakIntensity(); break;
+            case AreaNotCorrected: y = peak.peakArea(); break;
+            case AreaTopNotCorrected: y = peak.peakAreaTop(); break;
+            case RetentionTime: y = peak.rt(); break;
+            case Quality: y = peak.quality(); break;
+            case SNRatio: y = peak.signalBaselineRatio(); break;
+            default: y = peak.peakIntensity(); break;
             }
 
             //normalize
@@ -386,12 +386,12 @@ void PeakGroup::computeAvgBlankArea(const vector<EIC*>& eics) {
     if (peaks.size() == 0 ) return;
 
     //find range to fill in
-    float rtmin = peaks[0].rtmin;
-    float rtmax = peaks[0].rtmax;
+    float rtmin = peaks[0].rtmin();
+    float rtmax = peaks[0].rtmax();
 
     for (unsigned int i=1; i < peaks.size(); i++ ) {
-        if (peaks[i].rtmin < rtmin) rtmin = peaks[i].rtmin;
-        if (peaks[i].rtmax > rtmax) rtmax = peaks[i].rtmax;
+        if (peaks[i].rtmin() < rtmin) rtmin = peaks[i].rtmin();
+        if (peaks[i].rtmax() > rtmax) rtmax = peaks[i].rtmax();
     }
     rtmin = rtmin-0.25;
     rtmax = rtmax+0.25;
@@ -418,12 +418,12 @@ void PeakGroup::fillInPeaks(const vector<EIC*>& eics) {
     if (peaks.size() == 0 ) return;
 
     //find range to fill in
-    float rtmin = peaks[0].rtmin;
-    float rtmax = peaks[0].rtmax;
+    float rtmin = peaks[0].rtmin();
+    float rtmax = peaks[0].rtmax();
 
     for (unsigned int i=1; i < peaks.size(); i++ ) {
-        if (peaks[i].rtmin < rtmin) rtmin = peaks[i].rtmin;
-        if (peaks[i].rtmax > rtmax) rtmax = peaks[i].rtmax;
+        if (peaks[i].rtmin() < rtmin) rtmin = peaks[i].rtmin();
+        if (peaks[i].rtmax() > rtmax) rtmax = peaks[i].rtmax();
     }
 
     int filledInCount=0;
@@ -437,7 +437,7 @@ void PeakGroup::fillInPeaks(const vector<EIC*>& eics) {
         bool missing=true;
 
         for(unsigned int j=0; j < peaks.size(); j++ ) {
-            if ( peaks[j].getEIC() == eic) {
+            if ( peaks[j].eic() == eic) {
                 missing = false;
                 break;
             }
@@ -482,8 +482,8 @@ void PeakGroup::reduce() { // make sure there is only one peak per sample
     float totalWeight=1;
 
 
-    for( unsigned int i=0; i < peaks.size(); i++)  { totalWeight +=  peaks[i].peakIntensity; }
-    for( unsigned int i=0; i < peaks.size(); i++)  { groupMeanRt += peaks[i].rt * peaks[i].peakIntensity/totalWeight;  }
+    for( unsigned int i=0; i < peaks.size(); i++)  { totalWeight +=  peaks[i].peakIntensity(); }
+    for( unsigned int i=0; i < peaks.size(); i++)  { groupMeanRt += peaks[i].rt() * peaks[i].peakIntensity()/totalWeight;  }
 
 
     //In each group, take peak that closest to the mean retention time of a group
@@ -491,7 +491,7 @@ void PeakGroup::reduce() { // make sure there is only one peak per sample
 
 
     for( unsigned int i=0; i < peaks.size(); i++) {
-        mzSample* c = peaks[i].getSample();
+        mzSample* c = peaks[i].sample();
         //float rtdiff = abs(groupMeanRt-peaks[i].rt);
 
         /*
@@ -502,8 +502,9 @@ void PeakGroup::reduce() { // make sure there is only one peak per sample
         */
 
         //In each group, take the hghest peak
-        if ( maxPeaks.count(c) == 0 || maxPeaks[c].peakIntensity < peaks[i].peakIntensity) {
-            maxPeaks[c].copyObj(peaks[i]);
+        if ( maxPeaks.count(c) == 0 || maxPeaks[c].peakIntensity() < peaks[i].peakIntensity()) {
+            maxPeaks[c] = peaks[i];
+            /*maxPeaks[c].copyObj(peaks[i]);*/
         }
     }
 
@@ -543,11 +544,11 @@ void PeakGroup::updateQuality() {
     float weightedSum=0;
     float sumWeights=0;
     for(const auto peak : peaks) {
-        if(peak.quality > maxQuality) maxQuality = peak.quality;
-        if(peak.quality > minQuality) goodPeakCount++; //Sabu
-        peakQualitySum += peak.quality;
-        weightedSum += peak.quality * peak.peakIntensity;
-        sumWeights += peak.peakIntensity;
+        if(peak.quality() > maxQuality) maxQuality = peak.quality();
+        if(peak.quality() > minQuality) goodPeakCount++; //Sabu
+        peakQualitySum += peak.quality();
+        weightedSum += peak.quality() * peak.peakIntensity();
+        sumWeights += peak.peakIntensity();
     }
     avgPeakQuality = peakQualitySum / peaks.size();
     weightedAvgPeakQuality = weightedSum / sumWeights;
@@ -631,24 +632,24 @@ void PeakGroup::groupStatistics() {
     float sumWeights = 0;
 
     for(unsigned int i=0; i< peaks.size(); i++) {
-        if(peaks[i].pos != 0 && peaks[i].baseMz != 0) { rtSum += peaks[i].rt; mzSum += peaks[i].baseMz; nonZeroCount++; }
-        if(peaks[i].peakIntensity > 0) totalSampleCount++;
+        if(peaks[i].pos() != 0 && peaks[i].baseMz() != 0) { rtSum += peaks[i].rt(); mzSum += peaks[i].baseMz(); nonZeroCount++; }
+        if(peaks[i].peakIntensity() > 0) totalSampleCount++;
 
         float max;
         switch(quantitationType){
-            case AreaTop: max = peaks[i].peakAreaTopCorrected; break;
-            case Area: max = peaks[i].peakAreaCorrected; break;
-            case Height: max = peaks[i].peakIntensity; break;
-            case AreaTopNotCorrected: max = peaks[i].peakAreaTop; break;
-            case AreaNotCorrected: max = peaks[i].peakArea; break;
-            default: max = peaks[i].peakIntensity; break;
+        case AreaTop: max = peaks[i].peakAreaTopCorrected(); break;
+        case Area: max = peaks[i].peakAreaCorrected(); break;
+        case Height: max = peaks[i].peakIntensity(); break;
+        case AreaTopNotCorrected: max = peaks[i].peakAreaTop(); break;
+        case AreaNotCorrected: max = peaks[i].peakArea(); break;
+        default: max = peaks[i].peakIntensity(); break;
         }
 
-        if(peaks[i].peakAreaTopCorrected > maxAreaTopIntensity) maxAreaTopIntensity = peaks[i].peakAreaTopCorrected;
-        if(peaks[i].peakAreaCorrected > maxAreaIntensity) maxAreaIntensity = peaks[i].peakAreaCorrected;
-        if(peaks[i].peakIntensity > maxHeightIntensity) maxHeightIntensity = peaks[i].peakIntensity;
-        if(peaks[i].peakArea > maxAreaNotCorrectedIntensity) maxAreaNotCorrectedIntensity = peaks[i].peakArea;
-        if(peaks[i].peakAreaTop > maxAreaTopNotCorrectedIntensity) maxAreaTopNotCorrectedIntensity = peaks[i].peakAreaTop;
+        if(peaks[i].peakAreaTopCorrected() > maxAreaTopIntensity) maxAreaTopIntensity = peaks[i].peakAreaTopCorrected();
+        if(peaks[i].peakAreaCorrected() > maxAreaIntensity) maxAreaIntensity = peaks[i].peakAreaCorrected();
+        if(peaks[i].peakIntensity() > maxHeightIntensity) maxHeightIntensity = peaks[i].peakIntensity();
+        if(peaks[i].peakArea() > maxAreaNotCorrectedIntensity) maxAreaNotCorrectedIntensity = peaks[i].peakArea();
+        if(peaks[i].peakAreaTop() > maxAreaTopNotCorrectedIntensity) maxAreaTopNotCorrectedIntensity = peaks[i].peakAreaTop();
 
         //if(max > minIntensity) quantileIntensityPeaks++;
         //if(peaks[i].quality > minQuality) quantileQualityPeaks++;  
@@ -656,34 +657,34 @@ void PeakGroup::groupStatistics() {
         if(max>maxIntensity) {
             maxIntensity = max;
             currentIntensity = max;
-            meanMz=peaks[i].baseMz;
-            meanRt=peaks[i].rt;
+            meanMz=peaks[i].baseMz();
+            meanRt=peaks[i].rt();
         }
 
-        if(peaks[i].noNoiseObs>maxNoNoiseObs) maxNoNoiseObs = peaks[i].noNoiseObs;
-        if(minRt == 0 || peaks[i].rtmin < minRt) minRt = peaks[i].rtmin;
-        if(maxRt == 0 || peaks[i].rtmax > maxRt) maxRt = peaks[i].rtmax;
-        if(minMz == 0 || peaks[i].mzmin < minMz) minMz = peaks[i].mzmin;
-        if(maxMz == 0 || peaks[i].mzmax> maxMz) maxMz = peaks[i].mzmax;
-        if(peaks[i].peakAreaFractional > maxPeakFracionalArea) maxPeakFracionalArea=peaks[i].peakAreaFractional;
-        if(peaks[i].quality > maxQuality) maxQuality = peaks[i].quality;
-        if(peaks[i].quality > minQuality) goodPeakCount++; //Sabu
-        if ( peaks[i].signalBaselineRatio > maxSignalBaselineRatio) maxSignalBaselineRatio =  peaks[i].signalBaselineRatio;
+        if(peaks[i].noNoiseObs() >maxNoNoiseObs) maxNoNoiseObs = peaks[i].noNoiseObs();
+        if(minRt == 0 || peaks[i].rtmin() < minRt) minRt = peaks[i].rtmin();
+        if(maxRt == 0 || peaks[i].rtmax() > maxRt) maxRt = peaks[i].rtmax();
+        if(minMz == 0 || peaks[i].mzmin() < minMz) minMz = peaks[i].mzmin();
+        if(maxMz == 0 || peaks[i].mzmax() > maxMz) maxMz = peaks[i].mzmax();
+        if(peaks[i].peakAreaFractional() > maxPeakFracionalArea) maxPeakFracionalArea=peaks[i].peakAreaFractional();
+        if(peaks[i].quality() > maxQuality) maxQuality = peaks[i].quality();
+        if(peaks[i].quality() > minQuality) goodPeakCount++; //Sabu
+        if ( peaks[i].signalBaselineRatio() > maxSignalBaselineRatio) maxSignalBaselineRatio =  peaks[i].signalBaselineRatio();
 
 
-        if(peaks[i].fromBlankSample) {
+        if(peaks[i].fromBlankSample()) {
             blankSampleCount++;
-            if(peaks[i].peakIntensity > blankMax) blankMax = peaks[i].peakIntensity;
+            if(peaks[i].peakIntensity() > blankMax) blankMax = peaks[i].peakIntensity();
         } else {
-            sampleMean += peaks[i].peakIntensity;
+            sampleMean += peaks[i].peakIntensity();
             sampleCount++;
-            if(peaks[i].peakIntensity > sampleMax) sampleMax = peaks[i].peakIntensity;
+            if(peaks[i].peakIntensity() > sampleMax) sampleMax = peaks[i].peakIntensity();
         }
 
-        weightedSum += peaks[i].quality * peaks[i].peakIntensity;
-        sumWeights += peaks[i].peakIntensity;
-        peakQualitySum += peaks[i].quality;
-        if (peaks[i].peakIntensity > highestIntensity) highestIntensity = peaks[i].peakIntensity;
+        weightedSum += peaks[i].quality() * peaks[i].peakIntensity();
+        sumWeights += peaks[i].peakIntensity();
+        peakQualitySum += peaks[i].quality();
+        if (peaks[i].peakIntensity() > highestIntensity) highestIntensity = peaks[i].peakIntensity();
     }
     avgPeakQuality = peakQualitySum / peaks.size();
     weightedAvgPeakQuality = weightedSum/sumWeights;
@@ -699,14 +700,19 @@ void PeakGroup::groupStatistics() {
 
 void PeakGroup::groupOverlapMatrix() {
 
-    for(unsigned int i=0; i< peaks.size(); i++) peaks[i].groupOverlapFrac=0;
+    for(unsigned int i=0; i< peaks.size(); i++) peaks[i].setGroupOverlapFrac(0);
 
     for(unsigned int i=0; i< peaks.size(); i++) {
         Peak& a = peaks[i];
         for(unsigned int j=i; j< peaks.size(); j++) {
             Peak& b = peaks[j];
-            float overlap = checkOverlap(a.rtmin,a.rtmax,b.rtmin,b.rtmax); //check for overlap
-            if (overlap > 0 ) { b.groupOverlapFrac += log(overlap); a.groupOverlapFrac += log(overlap); }
+            float overlap = checkOverlap(a.rtmin(),a.rtmax(),b.rtmin(),b.rtmax()); //check for overlap
+            if (overlap > 0 ){
+                float bGroup = b.groupOverlapFrac();
+                float aGroup = a.groupOverlapFrac();
+                b.setGroupOverlapFrac( bGroup + log(overlap));
+                a.setGroupOverlapFrac( aGroup + log(overlap));
+            }
 
             /*
                if ( overlap > 0.1 ) {
@@ -717,7 +723,8 @@ void PeakGroup::groupOverlapMatrix() {
         }
     }
     //normalize
-    for(unsigned int i=0; i< peaks.size(); i++) peaks[i].groupOverlapFrac /= peaks.size();
+    for(unsigned int i=0; i< peaks.size(); i++)
+        peaks[i].setGroupOverlapFrac( peaks[i].groupOverlapFrac() / peaks.size());
 }
 
 void PeakGroup::summary() {
@@ -738,13 +745,13 @@ void PeakGroup::summary() {
         << endl;
 
     for (unsigned int i=0; i < peaks.size(); i++ ) {
-        cerr << "\t\t" << "Q:" << peaks[i].quality<< " "
-            << "pAf:" << peaks[i].peakAreaFractional<< " "
-            << "noNf" << peaks[i].noNoiseFraction << " "
-            << "noObs:" << peaks[i].noNoiseObs   << " "
-            << "w:"<< peaks[i].width<< " "
-            << "sn:" << peaks[i].signalBaselineRatio << " "
-            << "ovp:" << peaks[i].groupOverlapFrac << endl;
+        cerr << "\t\t" << "Q:" << peaks[i].quality()<< " "
+             << "pAf:" << peaks[i].peakAreaFractional()<< " "
+             << "noNf" << peaks[i].noNoiseFraction() << " "
+             << "noObs:" << peaks[i].noNoiseObs()   << " "
+             << "w:"<< peaks[i].width()<< " "
+             << "sn:" << peaks[i].signalBaselineRatio() << " "
+             << "ovp:" << peaks[i].groupOverlapFrac() << endl;
     }
 
     for(unsigned int i=0; i < children.size(); i++ ) children[i].summary();
@@ -771,7 +778,7 @@ bool PeakGroup::operator==(const PeakGroup* o)  {
 Peak* PeakGroup::getPeak(mzSample* s ) {
     if ( s == NULL ) return NULL;
     for(unsigned int i=0; i < peaks.size(); i++ ) {
-        if ( peaks[i].getSample() == s ) {
+        if ( peaks[i].sample() == s ) {
             return &peaks[i];
         }
     }
@@ -782,7 +789,7 @@ Peak* PeakGroup::getPeak(mzSample* s ) {
 void PeakGroup::reorderSamples() {
     std::sort(peaks.begin(), peaks.end(), Peak::compIntensity);
     for(unsigned int i=0; i < peaks.size(); i++ ) {
-        mzSample* s = peaks[i].getSample();
+        mzSample* s = peaks[i].sample();
         if ( s != NULL ) s->setSampleOrder(i);
     }
 }
@@ -812,9 +819,9 @@ string PeakGroup::getName() {
 vector<Scan*> PeakGroup::getRepresentativeFullScans() {
     vector<Scan*>matchedscans;
     for(unsigned int i=0; i < peaks.size(); i++ ) {
-        mzSample* sample = peaks[i].getSample();
+        mzSample* sample = peaks[i].sample();
         if ( sample == NULL ) continue;
-        Scan* scan = sample->getScan(peaks[i].scan);
+        Scan* scan = sample->getScan(peaks[i].scan());
         if (scan and scan->mslevel == 1) matchedscans.push_back(scan);
     }
     return matchedscans;
@@ -826,9 +833,9 @@ vector<Scan*> PeakGroup::getFragmentationEvents()
     if (!this->isMS1()) return matchedScans;
     
     for(auto peak : peaks) {
-        mzSample* sample = peak.getSample();
+        mzSample* sample = peak.sample();
         if (sample == NULL) continue;
-        mzSlice slice(minMz, maxMz, peak.rtmin, peak.rtmax);
+        mzSlice slice(minMz, maxMz, peak.rtmin(), peak.rtmax());
         vector<Scan*> scans = sample->getFragmentationEvents(&slice);
 
         matchedScans.insert(matchedScans.end(), scans.begin(), scans.end());

@@ -168,8 +168,8 @@ void GalleryWidget::addEicPlots(std::vector<PeakGroup*>&groups) {
                         plot->setTitle(QString(group->getName().c_str()));
 			plot->setData(0, QVariant::fromValue(slice));
 
-			for(int j=0; j < group->peakCount(); j++ ) {
-				plot->addPoint(group->peaks[j].rt, group->peaks[j].peakIntensity);
+                        for(int j=0; j < group->peakCount(); j++ ) {
+                            plot->addPoint(group->peaks[j].rt(), group->peaks[j].peakIntensity());
 			}
 		}
 	}
@@ -229,8 +229,8 @@ void GalleryWidget::addIdividualEicPlots(std::vector<EIC*>&eics, PeakGroup*group
                        .arg(eic->mzmax));
         if(group) {
             for(int j=0; j < group->peakCount(); j++ ) {
-                if(group->peaks[j].getSample() ==  eic->getSample() ) {
-                    plot->addPoint(group->peaks[j].rt, group->peaks[j].peakIntensity);
+                if(group->peaks[j].sample() ==  eic->getSample() ) {
+                    plot->addPoint(group->peaks[j].rt(), group->peaks[j].peakIntensity());
                 }
             }
         }

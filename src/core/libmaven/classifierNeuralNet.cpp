@@ -53,20 +53,20 @@ void ClassifierNeuralNet::loadModel(string filename) {
 }
 
 vector<float> ClassifierNeuralNet::getFeatures(Peak& p) {
-	vector<float> set(num_features, 0);
-	if (p.width > 0) {
-		set[0] = p.peakAreaFractional;
-		set[1] = p.noNoiseFraction;
-		set[2] = p.symmetry / (p.width + 1) * log2(p.width + 1);
-		set[3] = p.groupOverlapFrac;
-		set[4] = p.gaussFitR2 * 100.0;
-		
-        set[5] = p.signalBaselineRatio > 0 ? log2(p.signalBaselineRatio) / 10.0 : 0;
-		set[6] = p.peakRank / 10.0;
-		set[7] = p.peakIntensity > 0 ? log10(p.peakIntensity) : 0;
-		set[8] = p.width <= 3 && p.signalBaselineRatio >= 3.0 ? 1 : 0;
-		//set[9] =  ((float) (p.width >= 3) + (int) (p.symmetry >= 5) + (int) (p.signalBaselineRatio > 3.0))/3;
-		if (p.peakRank / 10.0 > 1)
+        vector<float> set(num_features, 0);
+        if (p.width() > 0) {
+            set[0] = p.peakAreaFractional();
+            set[1] = p.noNoiseFraction();
+            set[2] = p.symmetry() / (p.width() + 1) * log2(p.width() + 1);
+            set[3] = p.groupOverlapFrac();
+            set[4] = p.gaussFitR2() * 100.0;
+
+            set[5] = p.signalBaselineRatio() > 0 ? log2(p.signalBaselineRatio()) / 10.0 : 0;
+            set[6] = p.peakRank() / 10.0;
+            set[7] = p.peakIntensity() > 0 ? log10(p.peakIntensity()) : 0;
+            set[8] = p.width() <= 3 && p.signalBaselineRatio() >= 3.0 ? 1 : 0;
+                //set[9] =  ((float) (p.width >= 3) + (int) (p.symmetry >= 5) + (int) (p.signalBaselineRatio > 3.0))/3;
+            if (p.peakRank() / 10.0 > 1)
 			set[6] = 1;
 		//cerr << "tiny=" << set[8] << " " << set[7] << " " << p.symmetry << endl;
 		//set[7] =  ((float) (p.baseLineRightCleanCount >= 5) +  (int) (p.baseLineLeftCleanCount >= 5))/2;
@@ -80,7 +80,7 @@ void ClassifierNeuralNet::classify(PeakGroup* grp) {
 		return;
 
     for (unsigned int j=0; j < grp->peaks.size(); j++ ) {
-        grp->peaks[j].quality=scorePeak(grp->peaks[j]);
+        grp->peaks[j].setQuality(scorePeak(grp->peaks[j]));
 	}
 }
 
@@ -89,8 +89,8 @@ void ClassifierNeuralNet::scoreEICs(vector<EIC*> &eics)
 
 	for (unsigned int i = 0; i < eics.size(); i++)
 	{
-		for (unsigned int j = 0; j < eics[i]->peaks.size(); j++ ) {
-			eics[i]->peaks[j].quality = scorePeak(eics[i]->peaks[j]);
+                for (unsigned int j = 0; j < eics[i]->peaks.size(); j++ ) {
+                    eics[i]->peaks[j].setQuality (scorePeak(eics[i]->peaks[j]));
 		}
 	}
 }
@@ -113,20 +113,20 @@ void ClassifierNeuralNet::refineModel(PeakGroup* grp) {
 
 	if (grp->label == 'g' || grp->label == 'b') {
 		for (unsigned int j = 0; j < grp->peaks.size(); j++) {
-			Peak& p = grp->peaks[j];
-			p.label = grp->label;
-			if (p.width < 2)
-				p.label = 'b';
-			if (p.signalBaselineRatio <= 1)
-				p.label = 'b';
+                        Peak& p = grp->peaks[j];
+                        p.setLabel (grp->label);
+                        if (p.width() < 2)
+                            p.setLabel('b');
+                        if (p.signalBaselineRatio() <= 1)
+                            p.setLabel ('b');
 
-			float result[2] = { 0.1, 0.1 };
-			p.label == 'g' ? result[0] = 0.9 : result[1] = 0.9;
+                        float result[2] = { 0.1, 0.1 };
+                        p.label() == 'g' ? result[0] = 0.9 : result[1] = 0.9;
 
-			if (p.label == 'g' || p.label == 'b') {
+                        if (p.label() == 'g' || p.label() == 'b') {
 				vector<float> features = getFeatures(grp->peaks[j]);
-				FEATURES.push_back(features);
-				labels.push_back(p.label);
+                                FEATURES.push_back(features);
+                                labels.push_back(p.label());
 
 				float fts[1000];
 				for (int k = 0; k < num_features; k++)

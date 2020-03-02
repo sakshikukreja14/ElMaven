@@ -98,8 +98,8 @@ void AdductDetection::filterAdducts(vector<PeakGroup>& groups,
                     if (!parentPeak || !groupPeak)
                         continue;
                     ++numSamplesShared;
-                    auto groupScanRt = groupPeak->rt;
-                    auto parentScanRt = parentPeak->rt;
+                    auto groupScanRt = groupPeak->rt();
+                    auto parentScanRt = parentPeak->rt();
                     auto deviation = abs(groupScanRt - parentScanRt) * 60.0f;
                     if (deviation > mp->adductSearchWindow) {
                         tooFarFromParent = true;
@@ -131,8 +131,8 @@ void AdductDetection::filterAdducts(vector<PeakGroup>& groups,
                     double corr = sample->correlation(group.meanMz,
                                                       candidate->meanMz,
                                                       mp->massCutoffMerge,
-                                                      parentPeak->rtmin - deviation,
-                                                      parentPeak->rtmax + deviation,
+                                                      parentPeak->rtmin() - deviation,
+                                                      parentPeak->rtmax() + deviation,
                                                       mp->eicType,
                                                       mp->filterline);
                     corrSum += corr;

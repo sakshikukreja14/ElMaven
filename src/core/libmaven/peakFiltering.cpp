@@ -50,14 +50,14 @@ bool PeakFiltering::filter(Peak &peak)
 
     if (_isIsotope)
     {
-        if (_mavenParameters->minIsotopicPeakQuality > peak.quality)
+        if (_mavenParameters->minIsotopicPeakQuality > peak.quality())
         {
             return true;
         }
     }
     else
     {
-        if (_mavenParameters->minPeakQuality > peak.quality)
+        if (_mavenParameters->minPeakQuality > peak.quality())
         {
             return true;
         }

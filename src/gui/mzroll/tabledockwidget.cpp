@@ -256,7 +256,7 @@ void TableDockWidget::updateItem(QTreeWidgetItem *item, bool updateChildren) {
   int bad = 0;
   int total = group->peakCount();
   for (int i = 0; i < group->peakCount(); i++) {
-    group->peaks[i].quality > _mainwindow->mavenParameters->minQuality ? good++
+      group->peaks[i].quality() > _mainwindow->mavenParameters->minQuality ? good++
                                                                        : bad++;
   }
 
@@ -1465,8 +1465,8 @@ float TableDockWidget::showAccuracy(vector<PeakGroup *> &groups) {
   for (int i = 0; i < groups.size(); i++) {
     if (groups[i]->label == 'g' || groups[i]->label == 'b') {
       for (int j = 0; j < groups[i]->peaks.size(); j++) {
-        float q = groups[i]->peaks[j].quality;
-        char l = groups[i]->peaks[j].label;
+          float q = groups[i]->peaks[j].quality();
+          char l = groups[i]->peaks[j].label();
         if (l == 'g')
           gc++;
         if (l == 'g' && q > _mainwindow->mavenParameters->minQuality)
@@ -1769,8 +1769,8 @@ void TableDockWidget::clusterGroups() {
     int countCheckRaghu = 0;
 
     for (int i = 0; i < group1.peakCount(); i++) {
-      mzSample *sample = group1.peaks[i].getSample();
-      if (group1.peaks[i].peakIntensity > maxIntensity)
+      mzSample *sample = group1.peaks[i].sample();
+      if (group1.peaks[i].peakIntensity() > maxIntensity)
         largestSample = sample;
     }
 
@@ -2004,13 +2004,13 @@ int TableDockWidget::loadCSVFile(QString filename, QString sep = "\t") {
 
       for (unsigned int i = 14; i < header.size(); i++) {
         Peak p;
-        p.peakIntensity = fields[i].toInt();
-        p.rt = g->meanRt;
-        p.rtmin = g->minRt;
-        p.rtmax = g->maxRt;
-        p.peakMz = g->meanMz;
-        p.mzmin = g->minMz;
-        p.mzmax = g->maxMz;
+        p.setPeakIntensity (fields[i].toInt());
+        p.setRt (g->meanRt);
+        p.setRtmin (g->minRt);
+        p.setRtmax (g->maxRt);
+        p.setPeakMz (g->meanMz);
+        p.setMzmin (g->minMz);
+        p.setMzmax (g->maxMz);
 
         g->addPeak(p);
       }

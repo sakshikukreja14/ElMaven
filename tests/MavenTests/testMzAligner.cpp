@@ -75,7 +75,7 @@ void TestMzAligner::testObiWarp()
             vector<float> sampleOriginalRt;
             vector<float> sampleNewRt;
             for(Peak peak: grp.peaks) {
-                if(peak.getSample()->sampleName == aligner.refSample->sampleName) {
+                if(peak.sample()->sampleName == aligner.refSample->sampleName) {
                     refSampleOriginalRt = peak.getScan()->originalRt;
                 }
                 else {

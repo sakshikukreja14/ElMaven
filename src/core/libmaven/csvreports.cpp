@@ -410,7 +410,7 @@ void CSVReports::_writePeakInfo(PeakGroup* group)
     vector<mzSample*> samplesWithNoPeak = samples;
     for (unsigned int j = 0; j < group->peaks.size(); j++) {
         Peak& peak = group->peaks[j];
-        mzSample* sample = peak.getSample();
+        mzSample* sample = peak.sample();
         string sampleName;
         if (sample != NULL) {
             samplesWithNoPeak.erase(
@@ -425,21 +425,21 @@ void CSVReports::_writePeakInfo(PeakGroup* group)
 
         _reportStream << fixed << setprecision(6) << group->groupId << SEP
                       << compoundName << SEP << compoundID << SEP << formula
-                      << SEP << sampleName << SEP << peak.peakMz << SEP
-                      << peak.mzmin << SEP << peak.mzmax << setprecision(3)
-                      << SEP << peak.rt << SEP << peak.rtmin << SEP
-                      << peak.rtmax << SEP
-                      << peak.quality
+                      << SEP << sampleName << SEP << peak.peakMz() << SEP
+                      << peak.mzmin() << SEP << peak.mzmax() << setprecision(3)
+                      << SEP << peak.rt() << SEP << peak.rtmin() << SEP
+                      << peak.rtmax() << SEP
+                      << peak.quality()
                       // for intensity values, we only write two digits of
                       // floating point precision
                       // since these values are supposed to be large
                       // (in the order of > 10^3).
-                      << setprecision(2) << SEP << peak.peakIntensity << SEP
-                      << peak.peakArea << SEP << peak.peakSplineArea << SEP
-                      << peak.peakAreaTop << SEP << peak.peakAreaCorrected
-                      << SEP << peak.peakAreaTopCorrected << SEP
-                      << peak.noNoiseObs << SEP << peak.signalBaselineRatio
-                      << SEP << peak.fromBlankSample << endl;
+                      << setprecision(2) << SEP << peak.peakIntensity() << SEP
+                      << peak.peakArea() << SEP << peak.peakSplineArea() << SEP
+                      << peak.peakAreaTop() << SEP << peak.peakAreaCorrected()
+                      << SEP << peak.peakAreaTopCorrected() << SEP
+                      << peak.noNoiseObs() << SEP << peak.signalBaselineRatio()
+                      << SEP << peak.fromBlankSample() << endl;
     }
     for (auto sample : samplesWithNoPeak) {
         string sampleName = "";

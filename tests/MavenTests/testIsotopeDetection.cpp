@@ -103,11 +103,11 @@ void TestIsotopeDetection::testgetIsotopes() {
     //number of peaks for a label are consistent
     QVERIFY(isotopes["D2-label-1"].peaks.size() == 2);
     //intensity of label is consistent
-    QVERIFY(floor(isotopes["D2-label-1"].getPeak(samplesToLoad[1])->peakIntensity) == 89733);
-    //scan number is populated and consistent 
-    QVERIFY(isotopes["C13-label-2"].getPeak(samplesToLoad[1])->scan == 3490);
+    QVERIFY(floor(isotopes["D2-label-1"].getPeak(samplesToLoad[1])->peakIntensity()) == 89733);
+    //scan number is populated and consistent
+    QVERIFY(isotopes["C13-label-2"].getPeak(samplesToLoad[1])->scan() == 3490);
     //peak quality is populated and consistent
-    QVERIFY((isotopes["C13-label-2"].getPeak(samplesToLoad[1])->quality - 0.2) < 0.05);
+    QVERIFY((isotopes["C13-label-2"].getPeak(samplesToLoad[1])->quality() - 0.2) < 0.05);
 }
 
 void TestIsotopeDetection::testpullIsotopes() {
@@ -182,7 +182,7 @@ void TestIsotopeDetection::testpullIsotopes() {
     parent = mavenparameters->allgroups[3];
     mzSample* sample = mavenparameters->samples[0];
     Peak* parentPeak = parent.getPeak(sample);
-    float parentRt = parentPeak->rt;
+    float parentRt = parentPeak->rt();
     float maxRtDiff = mavenparameters->maxIsotopeScanDiff*mavenparameters->avgScanTime;
 
     IsotopeDetection isotopeDetection3(
@@ -202,7 +202,7 @@ void TestIsotopeDetection::testpullIsotopes() {
         PeakGroup& child = parent.children[i];
         Peak* childPeak = child.getPeak(sample);
         if (!childPeak) continue;
-        float rtDiff = abs(parentRt - childPeak->rt);
+        float rtDiff = abs(parentRt - childPeak->rt());
         if (rtDiff > maxRtDiff) outlier++;
     }
     QVERIFY(outlier == 0);

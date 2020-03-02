@@ -96,22 +96,22 @@ void ClassifierNaiveBayes::loadModel(string filename) {
 }
 
 vector<float> ClassifierNaiveBayes::getFeatures(Peak& p) {
-	vector<float> set(num_features, 0);
-	if (p.width > 0) {
-		set[0] = p.peakAreaFractional;
-		set[1] = p.noNoiseFraction;
-		set[2] = p.symmetry / (p.width + 1) * log2(p.width + 1);
-		set[3] = abs(p.groupOverlapFrac) > 0 ? log(abs(p.groupOverlapFrac)) : 0;
-		set[4] = p.gaussFitR2 * 100.0;
-		set[5] =
-				p.signalBaselineRatio > 0 ?
-						log2(p.signalBaselineRatio) / 10.0 : 0;
-		set[6] = p.peakRank / 10.0;
-		set[7] = p.peakBaseLineLevel < 100.0 ? 1.0 : 0.0;
-		set[8] = p.width <= 3 ? 1 : 0;
-		set[9] = p.symmetry <= 5 ? 1 : 0;
-		set[10] = p.signalBaselineRatio <= 3 ? 1.0 : 0.0;
-		if (p.peakRank / 10.0 > 1)
+        vector<float> set(num_features, 0);
+        if (p.width() > 0) {
+            set[0] = p.peakAreaFractional();
+            set[1] = p.noNoiseFraction();
+            set[2] = p.symmetry() / (p.width() + 1) * log2(p.width() + 1);
+            set[3] = abs(p.groupOverlapFrac()) > 0 ? log(abs(p.groupOverlapFrac())) : 0;
+            set[4] = p.gaussFitR2() * 100.0;
+                set[5] =
+                p.signalBaselineRatio() > 0 ?
+                                            log2(p.signalBaselineRatio()) / 10.0 : 0;
+                set[6] = p.peakRank() / 10.0;
+                set[7] = p.peakBaseLineLevel() < 100.0 ? 1.0 : 0.0;
+                set[8] = p.width() <= 3 ? 1 : 0;
+                set[9] = p.symmetry() <= 5 ? 1 : 0;
+                set[10] = p.signalBaselineRatio() <= 3 ? 1.0 : 0.0;
+                if (p.peakRank() / 10.0 > 1)
 			set[6] = 1;
 	}
 	return set;
@@ -136,9 +136,9 @@ void ClassifierNaiveBayes::classify(Peak&p) {
 	if (Gcount == 0 || Bcount == 0)
 		return;
 
-	cerr << "Gcount=" << Gcount << " Bcount=" << Bcount << " LABEL=" << p.label
-			<< endl;
-	p.quality = 0.5;
+        cerr << "Gcount=" << Gcount << " Bcount=" << Bcount << " LABEL=" << p.label()
+                        << endl;
+        p.setQuality (0.5);
 
 	for (int jj = 0; jj < num_features; jj++) {
 		float rssG = 0;
@@ -167,16 +167,16 @@ void ClassifierNaiveBayes::classify(Peak&p) {
 		if (rssG < rssB)
 			if (rssG == 0)
 				rssG = 1 / 10 * rssB;
-		float w = 0.3 + 1 / (1 + exp(-1 * rssB / rssG));
-		p.quality *= w;
-		cerr << features_names[jj] << "=" << A[jj] << "\trss(b,g)=" << rssB
-				<< " " << rssG << "\tw=" << w << "\tq=" << p.quality << endl;
+                float w = 0.3 + 1 / (1 + exp(-1 * rssB / rssG));
+                p.setQuality(p.quality() * w);
+                cerr << features_names[jj] << "=" << A[jj] << "\trss(b,g)=" << rssB
+                     << " " << rssG << "\tw=" << w << "\tq=" << p.quality() << endl;
 	}
 
-	if (p.quality > 1.0)
-		p.quality = 1;
-	if (p.quality < 0.0)
-		p.quality = 0;
+        if (p.quality() > 1.0)
+            p.setQuality (1);
+        if (p.quality() < 0.0)
+            p.setQuality (0);
 
 	/*
 	 if (p.label == 'g' && p.quality < 0.5 ) cerr << "MISSCLASSIFIED";
@@ -245,12 +245,12 @@ void ClassifierNaiveBayes::refineModel(PeakGroup* grp) {
 		return;
 	if (grp->label == 'g' || grp->label == 'b') {
 		for (unsigned int j = 0; j < grp->peaks.size(); j++) {
-			Peak& p = grp->peaks[j];
-			p.label = grp->label;
-			if (p.width < 2 || p.signalBaselineRatio <= 1)
-				p.label = 'b';
-			if (p.label == 'g' || p.label == 'b') {
-				labels.push_back(p.label);
+                        Peak& p = grp->peaks[j];
+                        p.setLabel (grp->label);
+                        if (p.width() < 2 || p.signalBaselineRatio() <= 1)
+                            p.setLabel ('b');
+                        if (p.label() == 'g' || p.label() == 'b') {
+                            labels.push_back(p.label());
 				FEATURES.push_back(getFeatures(p));
 			}
 		}
@@ -280,9 +280,9 @@ void ClassifierNaiveBayes::findOptimalSplit(vector<Peak*>&peaks, int fNum) {
 		Peak* p = peaks[i];
 		vector<float> features = getFeatures(*p);
 		if (fNum < features.size()) {
-			X[i] = features[fNum];
-			labels[i] = p->label;
-			totals[p->label]++;
+                        X[i] = features[fNum];
+                        labels[i] = p->label();
+                        totals[p->label()]++;
 		}
 	}
 

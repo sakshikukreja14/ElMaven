@@ -324,43 +324,43 @@ void ProjectDatabase::saveGroupPeaks(PeakGroup* group, const int databaseId)
 
     for (Peak p : group->peaks) {
         peaksQuery->bind(":group_id", databaseId);
-        peaksQuery->bind(":sample_id", p.getSample()->getSampleId());
-        peaksQuery->bind(":pos", static_cast<int>(p.pos));
-        peaksQuery->bind(":minpos", static_cast<int>(p.minpos));
-        peaksQuery->bind(":maxpos", static_cast<int>(p.maxpos));
-        peaksQuery->bind(":rt", p.rt);
-        peaksQuery->bind(":rtmin", p.rtmin);
-        peaksQuery->bind(":rtmax", p.rtmax);
-        peaksQuery->bind(":mzmin", p.mzmin);
-        peaksQuery->bind(":mzmax", p.mzmax);
-        peaksQuery->bind(":scan", static_cast<int>(p.scan));
-        peaksQuery->bind(":minscan", static_cast<int>(p.minscan));
-        peaksQuery->bind(":maxscan", static_cast<int>(p.maxscan));
-        peaksQuery->bind(":peak_area", p.peakArea);
-        peaksQuery->bind(":peak_spline_area", p.peakSplineArea);
-        peaksQuery->bind(":peak_area_corrected", p.peakAreaCorrected);
-        peaksQuery->bind(":peak_area_top", p.peakAreaTop);
-        peaksQuery->bind(":peak_area_top_corrected", p.peakAreaTopCorrected);
-        peaksQuery->bind(":peak_area_fractional", p.peakAreaFractional);
-        peaksQuery->bind(":peak_rank", p.peakRank);
-        peaksQuery->bind(":peak_intensity", p.peakIntensity);
-        peaksQuery->bind(":peak_baseline_level", p.peakBaseLineLevel);
-        peaksQuery->bind(":peak_mz", p.peakMz);
-        peaksQuery->bind(":median_mz", p.medianMz);
-        peaksQuery->bind(":base_mz", p.baseMz);
-        peaksQuery->bind(":quality", p.quality);
-        peaksQuery->bind(":width", static_cast<int>(p.width));
-        peaksQuery->bind(":gauss_fit_sigma", p.gaussFitSigma);
-        peaksQuery->bind(":gauss_fit_r2", p.gaussFitR2);
-        peaksQuery->bind(":no_noise_obs", static_cast<int>(p.noNoiseObs));
-        peaksQuery->bind(":no_noise_fraction", p.noNoiseFraction);
-        peaksQuery->bind(":symmetry", p.symmetry);
-        peaksQuery->bind(":signal_baseline_ratio", p.signalBaselineRatio);
-        peaksQuery->bind(":group_overlap", p.groupOverlap);
-        peaksQuery->bind(":group_overlap_frac", p.groupOverlapFrac);
-        peaksQuery->bind(":local_max_flag", p.localMaxFlag);
-        peaksQuery->bind(":from_blank_sample", p.fromBlankSample);
-        peaksQuery->bind(":label", string(1, p.label));
+        peaksQuery->bind(":sample_id", p.sample()->getSampleId());
+        peaksQuery->bind(":pos", static_cast<int>(p.pos()));
+        peaksQuery->bind(":minpos", static_cast<int>(p.minpos()));
+        peaksQuery->bind(":maxpos", static_cast<int>(p.maxpos()));
+        peaksQuery->bind(":rt", p.rt());
+        peaksQuery->bind(":rtmin", p.rtmin());
+        peaksQuery->bind(":rtmax", p.rtmax());
+        peaksQuery->bind(":mzmin", p.mzmin());
+        peaksQuery->bind(":mzmax", p.mzmax());
+        peaksQuery->bind(":scan", static_cast<int>(p.scan()));
+        peaksQuery->bind(":minscan", static_cast<int>(p.minscan()));
+        peaksQuery->bind(":maxscan", static_cast<int>(p.maxscan()));
+        peaksQuery->bind(":peak_area", p.peakArea());
+        peaksQuery->bind(":peak_spline_area", p.peakSplineArea());
+        peaksQuery->bind(":peak_area_corrected", p.peakAreaCorrected());
+        peaksQuery->bind(":peak_area_top", p.peakAreaTop());
+        peaksQuery->bind(":peak_area_top_corrected", p.peakAreaTopCorrected());
+        peaksQuery->bind(":peak_area_fractional", p.peakAreaFractional());
+        peaksQuery->bind(":peak_rank", p.peakRank());
+        peaksQuery->bind(":peak_intensity", p.peakIntensity());
+        peaksQuery->bind(":peak_baseline_level", p.peakBaseLineLevel());
+        peaksQuery->bind(":peak_mz", p.peakMz());
+        peaksQuery->bind(":median_mz", p.medianMz());
+        peaksQuery->bind(":base_mz", p.baseMz());
+        peaksQuery->bind(":quality", p.quality());
+        peaksQuery->bind(":width", static_cast<int>(p.width()));
+        peaksQuery->bind(":gauss_fit_sigma", p.gaussFitSigma());
+        peaksQuery->bind(":gauss_fit_r2", p.gaussFitR2());
+        peaksQuery->bind(":no_noise_obs", static_cast<int>(p.noNoiseObs()));
+        peaksQuery->bind(":no_noise_fraction", p.noNoiseFraction());
+        peaksQuery->bind(":symmetry", p.symmetry());
+        peaksQuery->bind(":signal_baseline_ratio", p.signalBaselineRatio());
+        peaksQuery->bind(":group_overlap", p.groupOverlap());
+        peaksQuery->bind(":group_overlap_frac", p.groupOverlapFrac());
+        peaksQuery->bind(":local_max_flag", p.localMaxFlag());
+        peaksQuery->bind(":from_blank_sample", p.fromBlankSample());
+        peaksQuery->bind(":label", string(1, p.label()));
 
         if (!peaksQuery->execute())
             cerr << "Error: failed to write peak" << endl;
@@ -1040,51 +1040,51 @@ void ProjectDatabase::loadGroupPeaks(PeakGroup* parentGroup,
 
     while (peaksQuery->next()) {
         Peak peak;
-        peak.pos = static_cast<unsigned int>(peaksQuery->integerValue("pos"));
-        peak.minpos =
-            static_cast<unsigned int>(peaksQuery->integerValue("minpos"));
-        peak.maxpos =
-            static_cast<unsigned int>(peaksQuery->integerValue("maxpos"));
-        peak.rt = peaksQuery->floatValue("rt");
-        peak.rtmin = peaksQuery->floatValue("rtmin");
-        peak.rtmax = peaksQuery->floatValue("rtmax");
-        peak.mzmin = peaksQuery->floatValue("mzmin");
-        peak.mzmax = peaksQuery->floatValue("mzmax");
-        peak.scan = static_cast<unsigned int>(peaksQuery->integerValue("scan"));
-        peak.minscan =
-            static_cast<unsigned int>(peaksQuery->integerValue("minscan"));
-        peak.maxscan =
-            static_cast<unsigned int>(peaksQuery->integerValue("maxscan"));
-        peak.peakArea = peaksQuery->floatValue("peak_area");
-        peak.peakSplineArea = peaksQuery->floatValue("peak_spline_area");
-        peak.peakAreaCorrected = peaksQuery->floatValue("peak_area_corrected");
-        peak.peakAreaTop = peaksQuery->floatValue("peak_area_top");
-        peak.peakAreaTopCorrected =
-            peaksQuery->floatValue("peak_area_top_corrected");
-        peak.peakAreaFractional =
-            peaksQuery->floatValue("peak_area_fractional");
-        peak.peakRank = peaksQuery->floatValue("peak_rank");
-        peak.peakIntensity = peaksQuery->floatValue("peak_intensity");
-        peak.peakBaseLineLevel = peaksQuery->floatValue("peak_baseline_level");
-        peak.peakMz = peaksQuery->floatValue("peak_mz");
-        peak.medianMz = peaksQuery->floatValue("median_mz");
-        peak.baseMz = peaksQuery->floatValue("base_mz");
-        peak.quality = peaksQuery->floatValue("quality");
-        peak.width =
-            static_cast<unsigned int>(peaksQuery->integerValue("width"));
-        peak.gaussFitSigma = peaksQuery->floatValue("gauss_fit_sigma");
-        peak.gaussFitR2 = peaksQuery->floatValue("gauss_fit_r2");
-        peak.noNoiseObs =
-            static_cast<unsigned int>(peaksQuery->integerValue("no_noise_obs"));
-        peak.noNoiseFraction = peaksQuery->floatValue("no_noise_fraction");
-        peak.symmetry = peaksQuery->floatValue("symmetry");
-        peak.signalBaselineRatio =
-            peaksQuery->floatValue("signal_baseline_ratio");
-        peak.groupOverlap = peaksQuery->floatValue("group_overlap");
-        peak.groupOverlapFrac = peaksQuery->floatValue("group_overlap_frac");
-        peak.localMaxFlag = peaksQuery->integerValue("local_max_flag");
-        peak.fromBlankSample = peaksQuery->integerValue("from_blank_sample");
-        peak.label = peaksQuery->stringValue("label")[0];
+        peak.setPos  (static_cast<unsigned int>(peaksQuery->integerValue("pos")));
+        peak.setMinpos(
+            static_cast<unsigned int>(peaksQuery->integerValue("minpos")));
+        peak.setMaxpos(
+            static_cast<unsigned int>(peaksQuery->integerValue("maxpos")));
+        peak.setRt (peaksQuery->floatValue("rt"));
+        peak.setRtmin (peaksQuery->floatValue("rtmin"));
+        peak.setRtmax (peaksQuery->floatValue("rtmax"));
+        peak.setMzmin (peaksQuery->floatValue("mzmin"));
+        peak.setMzmax (peaksQuery->floatValue("mzmax"));
+        peak.setScan (static_cast<unsigned int>(peaksQuery->integerValue("scan")));
+        peak.setMinscan(
+            static_cast<unsigned int>(peaksQuery->integerValue("minscan")));
+        peak.setMaxscan(
+            static_cast<unsigned int>(peaksQuery->integerValue("maxscan")));
+        peak.setPeakArea (peaksQuery->floatValue("peak_area"));
+        peak.setPeakSplineArea (peaksQuery->floatValue("peak_spline_area"));
+        peak.setPeakAreaCorrected (peaksQuery->floatValue("peak_area_corrected"));
+        peak.setPeakAreaTop (peaksQuery->floatValue("peak_area_top"));
+        peak.setPeakAreaTopCorrected
+            (peaksQuery->floatValue("peak_area_top_corrected"));
+        peak.setPeakAreaFractional(
+            peaksQuery->floatValue("peak_area_fractional"));
+        peak.setPeakRank (peaksQuery->floatValue("peak_rank"));
+        peak.setPeakIntensity (peaksQuery->floatValue("peak_intensity"));
+        peak.setPeakBaseLineLevel (peaksQuery->floatValue("peak_baseline_level"));
+        peak.setPeakMz (peaksQuery->floatValue("peak_mz"));
+        peak.setMedianMz (peaksQuery->floatValue("median_mz"));
+        peak.setBaseMz (peaksQuery->floatValue("base_mz"));
+        peak.setQuality (peaksQuery->floatValue("quality"));
+        peak.setWidth(
+            static_cast<unsigned int>(peaksQuery->integerValue("width")));
+        peak.setGaussFitSigma (peaksQuery->floatValue("gauss_fit_sigma"));
+        peak.setGaussFitR2 (peaksQuery->floatValue("gauss_fit_r2"));
+        peak.setNoNoiseObs(
+            static_cast<unsigned int>(peaksQuery->integerValue("no_noise_obs")));
+        peak.setNoNoiseFraction (peaksQuery->floatValue("no_noise_fraction"));
+        peak.setSymmetry (peaksQuery->floatValue("symmetry"));
+        peak.setSignalBaselineRatio(
+            peaksQuery->floatValue("signal_baseline_ratio"));
+        peak.setGroupOverlap (peaksQuery->floatValue("group_overlap"));
+        peak.setGroupOverlapFrac (peaksQuery->floatValue("group_overlap_frac"));
+        peak.setLocalMaxFlag (peaksQuery->integerValue("local_max_flag"));
+        peak.setFromBlankSample (peaksQuery->integerValue("from_blank_sample"));
+        peak.setLabel (peaksQuery->stringValue("label")[0]);
 
         string sampleName = peaksQuery->stringValue("sample_name");
 

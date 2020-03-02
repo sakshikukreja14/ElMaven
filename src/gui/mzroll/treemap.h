@@ -16,9 +16,9 @@ class TreemapItem
 						m_group = g;
 						m_color = Qt::gray;
 						m_size = 0;
-						if (g) 
-								for(int j=0; j<g->peaks.size();j++) 
-										m_size += g->peaks[j].peakAreaCorrected;
+						if (g)
+                                                                for(int j=0; j<g->peaks.size();j++)
+                                                                    m_size += g->peaks[j].peakAreaCorrected();
 
 				}
 

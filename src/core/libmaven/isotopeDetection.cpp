@@ -87,16 +87,16 @@ map<string, PeakGroup> IsotopeDetection::getIsotopes(PeakGroup* parentgroup, vec
 
             Peak* parentPeak = parentgroup->getPeak(sample);
             if (parentPeak) {
-                rt = parentPeak->rt;
-                rtmin = parentPeak->rtmin;
-                rtmax = parentPeak->rtmax;
+                rt = parentPeak->rt();
+                rtmin = parentPeak->rtmin();
+                rtmax = parentPeak->rtmax();
             }
 
             float isotopePeakIntensity = 0;
             float parentPeakIntensity = 0;
 
             if (parentPeak) {
-                parentPeakIntensity = parentPeak->peakIntensity;
+                parentPeakIntensity = parentPeak->peakIntensity();
                 Scan* scan = parentPeak->getScan();
                 std::pair<float, float> isotope = getIntensity(scan, mzmin, mzmax);
                 isotopePeakIntensity = isotope.first;
@@ -130,7 +130,7 @@ map<string, PeakGroup> IsotopeDetection::getIsotopes(PeakGroup* parentgroup, vec
             //Set peak quality
             if (_mavenParameters->clsf->hasModel()) {
                 for(Peak& peak: allPeaks)
-                    peak.quality = _mavenParameters->clsf->scorePeak(peak);
+                    peak.setQuality (_mavenParameters->clsf->scorePeak(peak));
             }
 
             //filter isotopic peaks
@@ -146,7 +146,7 @@ map<string, PeakGroup> IsotopeDetection::getIsotopes(PeakGroup* parentgroup, vec
             float d = FLT_MAX;
             for (unsigned int i = 0; i < allPeaks.size(); i++) {
                 Peak& x = allPeaks[i];
-                float dist = abs(x.rt - rt);
+                float dist = abs(x.rt() - rt);
                 if (dist > maxRtDiff)
                     continue;
                 if (dist < d) {
@@ -227,8 +227,8 @@ bool IsotopeDetection::filterIsotope(Isotope x, float isotopePeakIntensity, floa
         float rtmax = parentGroup->maxRt;
         if (parentPeak)
         {
-            rtmin = parentPeak->rtmin;
-            rtmax = parentPeak->rtmax;
+            rtmin = parentPeak->rtmin();
+            rtmax = parentPeak->rtmax();
         }
         float w = _mavenParameters->maxIsotopeScanDiff
             * _mavenParameters->avgScanTime;

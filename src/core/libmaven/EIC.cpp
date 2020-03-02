@@ -476,7 +476,7 @@ void EIC::findPeaks()
 
 void EIC::findPeakBounds(Peak &peak)
 {
-    int apex = peak.pos;
+    int apex = peak.pos();
 
     int ii = apex - 1;
     int jj = apex + 1;
@@ -548,12 +548,12 @@ void EIC::findPeakBounds(Peak &peak)
     //find maximum point in the span from min to max position
     for (int k = lb; k < rb && k < N; k++)
     {
-        if (intensity[k] > intensity[peak.pos] && mz[k] > 0)
-            peak.pos = k;
+        if (intensity[k] > intensity[peak.pos()] && mz[k] > 0)
+            peak.setPos(k);
     }
 
     //remove zero intensity points on the left
-    for (unsigned int k = lb; k < peak.pos && k < N; k++)
+    for (unsigned int k = lb; k < peak.pos() && k < N; k++)
     {
         if (intensity[k] > 0)
             break;
@@ -561,7 +561,7 @@ void EIC::findPeakBounds(Peak &peak)
     }
 
     //remove zero intensity points on the right
-    for (unsigned int k = rb; k > peak.pos && k < N; k--)
+    for (unsigned int k = rb; k > peak.pos() && k < N; k--)
     {
         if (intensity[k] > 0)
             break;
@@ -574,10 +574,10 @@ void EIC::findPeakBounds(Peak &peak)
     if (rb == apex && rb + 1 < N)
         rb = apex + 1;
 
-    peak.minpos = lb;
-    peak.maxpos = rb;
-    peak.splineminpos = slb;
-    peak.splinemaxpos = srb;
+    peak.setMinpos(lb);
+    peak.setMaxpos(rb);
+    peak.setSplineminpos(slb);
+    peak.setSplinemaxpos(srb);
 }
 
 void EIC::getPeakDetails(Peak &peak)
@@ -587,46 +587,49 @@ void EIC::getPeakDetails(Peak &peak)
         return;
     if (baseline == NULL)
         return;
-    if (peak.pos >= N)
+    if (peak.pos() >= N)
         return;
 
     //intensity and mz at the apex of the peaks
-    peak.peakIntensity = intensity[peak.pos];
-    peak.noNoiseObs = 0;
-    peak.peakAreaCorrected = 0;
-    peak.peakArea = 0;
-    peak.peakSplineArea = 0;
+    peak.setPeakIntensity (intensity[peak.pos()]);
+    peak.setNoNoiseObs(0);
+    peak.setPeakAreaCorrected(0);
+    peak.setPeakArea(0);
+    peak.setPeakSplineArea(0);
     float baselineArea = 0;
 
     if (sample != NULL && sample->isBlank)
     {
-        peak.fromBlankSample = true;
+        peak.setFromBlankSample(true);
     }
 
     StatisticsVector<float> allmzs;
     string bitstring;
-    if (peak.maxpos >= N)
-        peak.maxpos = N - 1;
-    if (peak.minpos >= N)
-        peak.minpos = peak.pos; //unsigned number weirdness.
+    if (peak.maxpos() >= N)
+        peak.setMaxpos(N - 1);
+    if (peak.minpos() >= N)
+        peak.setMinpos(peak.pos()); //unsigned number weirdness.
 
-    for (unsigned int i = peak.splineminpos; i <= peak.splinemaxpos; i++) {
-        if (peak.splineminpos == 0 && peak.splinemaxpos == 0) break;
-        peak.peakSplineArea += spline[i];
+    for (unsigned int i = peak.splineminpos(); i <= peak.splinemaxpos(); i++) {
+        if (peak.splineminpos() == 0 && peak.splinemaxpos() == 0) break;
+        peak.setPeakSplineArea(peak.peakSplineArea() + spline[i]);
     }
 
-    float lastValue = intensity[peak.minpos];
-    for (unsigned int j = peak.minpos; j <= peak.maxpos; j++)
+    float lastValue = intensity[peak.minpos()];
+    for (unsigned int j = peak.minpos(); j <= peak.maxpos(); j++)
     {
-        peak.peakArea += intensity[j];
+        peak.setPeakArea(peak.peakArea() + intensity[j]);
         baselineArea += baseline[j];
-        if (intensity[j] > baseline[j])
-            peak.noNoiseObs++;
+        if (intensity[j] > baseline[j]){
+            auto noNoise = peak.noNoiseObs();
+            noNoise++;
+            peak.setNoNoiseObs(noNoise);
+        }
 
-        if (peak.peakIntensity < intensity[j])
+        if (peak.peakIntensity() < intensity[j])
         {
-            peak.peakIntensity = intensity[j];
-            peak.pos = j;
+            peak.setPeakIntensity(intensity[j]);
+            peak.setPos(j);
         }
 
         if (mz.size() > 0 && mz[j] > 0)
@@ -659,64 +662,64 @@ void EIC::getPeakDetails(Peak &peak)
 
     if (rt.size() > 0 && rt.size() == N)
     {
-        peak.rt = rt[peak.pos];
-        peak.rtmin = rt[peak.minpos];
-        peak.rtmax = rt[peak.maxpos];
+        peak.setRt(rt[peak.pos()]);
+        peak.setRtmin(rt[peak.minpos()]);
+        peak.setRtmax(rt[peak.maxpos()]);
     }
 
     if (scannum.size() && scannum.size() == N)
     {
-        peak.scan = scannum[peak.pos];       //scan number at the apex of the peak
-        peak.minscan = scannum[peak.minpos]; //scan number at left most bound
-        peak.maxscan = scannum[peak.maxpos]; //scan number at the right most bound
+        peak.setScan (scannum[peak.pos()]);       //scan number at the apex of the peak
+        peak.setMinscan (scannum[peak.minpos()]); //scan number at left most bound
+        peak.setMaxscan (scannum[peak.maxpos()]); //scan number at the right most bound
     }
 
     int n = 1;
-    peak.peakAreaTop = intensity[peak.pos];
-    peak.peakAreaTopCorrected = intensity[peak.pos] - baseline[peak.pos];
-    if (peak.pos - 1 < N)
+    peak.setPeakAreaTop (intensity[peak.pos()]);
+    peak.setPeakAreaTopCorrected (intensity[peak.pos()] - baseline[peak.pos()]);
+    if (peak.pos() - 1 < N)
     {
-        peak.peakAreaTop += intensity[peak.pos - 1];
-        peak.peakAreaTopCorrected += intensity[peak.pos - 1] - baseline[peak.pos - 1];
+        peak.setPeakAreaTop(peak.peakAreaTop() +intensity[peak.pos() - 1]);
+        peak.setPeakAreaTopCorrected( peak.peakAreaTopCorrected() + intensity[peak.pos() - 1] - baseline[peak.pos() - 1]);
         n++;
     }
-    if (peak.pos + 1 < N)
+    if (peak.pos() + 1 < N)
     {
-        peak.peakAreaTop += intensity[peak.pos + 1];
-        peak.peakAreaTopCorrected += intensity[peak.pos + 1] - baseline[peak.pos + 1];
+        peak.setPeakAreaTop( peak.peakAreaTop() + intensity[peak.pos() + 1]);
+        peak.setPeakAreaTopCorrected (peak.peakAreaTopCorrected() + intensity[peak.pos() + 1] - baseline[peak.pos() + 1]);
         n++;
     }
-    peak.peakAreaTop /= n;
-    peak.peakAreaTopCorrected /= n;
-    if (peak.peakAreaTopCorrected < 0) peak.peakAreaTopCorrected = 0;
+    peak.setPeakAreaTop(peak.peakAreaTop() / n);
+    peak.setPeakAreaTopCorrected(peak.peakAreaTopCorrected() / n);
+    if (peak.peakAreaTopCorrected() < 0) peak.setPeakAreaTopCorrected (0);
 
-    peak.peakMz = mz[peak.pos];
+    peak.setPeakMz(mz[peak.pos()]);
 
-    float maxBaseLine = MAX(MAX(baseline[peak.pos], 10), MAX(intensity[peak.minpos], intensity[peak.maxpos]));
-    peak.peakBaseLineLevel = baseline[peak.pos];
-    peak.noNoiseFraction = (float)peak.noNoiseObs / (this->eic_noNoiseObs + 1);
-    peak.peakAreaCorrected = peak.peakArea - baselineArea;
-    if (peak.peakAreaCorrected < 0) peak.peakAreaCorrected = 0; 
-    peak.peakAreaFractional = peak.peakAreaCorrected / (totalIntensity + 1);
-    peak.signalBaselineRatio = peak.peakIntensity / maxBaseLine;
-    peak.signalBaselineDifference = peak.peakIntensity - maxBaseLine;
+    float maxBaseLine = MAX(MAX(baseline[peak.pos()], 10), MAX(intensity[peak.minpos()], intensity[peak.maxpos()]));
+    peak.setPeakBaseLineLevel(baseline[peak.pos()]);
+    peak.setNoNoiseFraction ((float)peak.noNoiseObs() / (this->eic_noNoiseObs + 1));
+    peak.setPeakAreaCorrected  (peak.peakArea() - baselineArea);
+    if (peak.peakAreaCorrected() < 0) peak.setPeakAreaCorrected (0);
+    peak.setPeakAreaFractional (peak.peakAreaCorrected() / (totalIntensity + 1));
+    peak.setSignalBaselineRatio (peak.peakIntensity() / maxBaseLine);
+    peak.setSignalBaselineDifference (peak.peakIntensity() - maxBaseLine);
 
     if (allmzs.size() > 0)
     {
-        peak.medianMz = allmzs.median();
-        peak.baseMz = allmzs.mean();
-        peak.mzmin = allmzs.minimum();
-        peak.mzmax = allmzs.maximum();
+        peak.setMedianMz (allmzs.median());
+        peak.setBaseMz (allmzs.mean());
+        peak.setMzmin (allmzs.minimum());
+        peak.setMzmax (allmzs.maximum());
     }
 
-    if (peak.medianMz == 0)
+    if (peak.medianMz() == 0)
     {
-        peak.medianMz = peak.peakMz;
+        peak.setMedianMz (peak.peakMz());
     }
 
     mzPattern p(bitstring);
-    if (peak.width >= 5)
-        peak.symmetry = p.longestSymmetry('+', '-');
+    if (peak.width() >= 5)
+        peak.setSymmetry  (p.longestSymmetry('+', '-'));
     checkGaussianFit(peak);
 }
 
@@ -728,7 +731,7 @@ void EIC::getPeakWidth(Peak &peak)
     int right = 0;
     size_t N = intensity.size();
 
-    for (unsigned int i = peak.pos - 1; i > peak.minpos && i < N; i--)
+    for (unsigned int i = peak.pos() - 1; i > peak.minpos() && i < N; i--)
     {
         if (intensity[i] < baseline[i] ||
             mzUtils::almostEqual(baseline[i], intensity[i], 0.0000005f))
@@ -736,14 +739,14 @@ void EIC::getPeakWidth(Peak &peak)
         else
             left++;
     }
-    for (unsigned int j = peak.pos + 1; j < peak.maxpos && j < N; j++)
+    for (unsigned int j = peak.pos() + 1; j < peak.maxpos() && j < N; j++)
     {
         if (intensity[j] > baseline[j])
             right++;
         else
             break;
     }
-    peak.width = width + left + right;
+    peak.setWidth (width + left + right);
 }
 
 void EIC::filterPeaks()
@@ -752,7 +755,7 @@ void EIC::filterPeaks()
     unsigned int i = 0;
     while (i < peaks.size())
     {
-        if (filterSignalBaselineDiff > peaks[i].signalBaselineDifference)
+        if (filterSignalBaselineDiff > peaks[i].signalBaselineDifference())
         {
             peaks.erase(peaks.begin() + i);
         }
@@ -769,8 +772,8 @@ vector<mzPoint> EIC::getIntensityVector(Peak &peak)
 
     if (intensity.size() > 0)
     {
-        unsigned int maxi = peak.maxpos;
-        unsigned int mini = peak.minpos;
+        unsigned int maxi = peak.maxpos();
+        unsigned int mini = peak.minpos();
         if (maxi >= intensity.size())
             maxi = intensity.size() - 1;
 
@@ -792,10 +795,10 @@ vector<mzPoint> EIC::getIntensityVector(Peak &peak)
 
 void EIC::checkGaussianFit(Peak &peak)
 {
-    peak.gaussFitSigma = 0;
-    peak.gaussFitR2 = 0.03;
-    int left = peak.pos - peak.minpos;
-    int right = peak.maxpos - peak.pos;
+    peak.setGaussFitSigma (0);
+    peak.setGaussFitR2 (0.03);
+    int left = peak.pos() - peak.minpos();
+    int right = peak.maxpos() - peak.pos();
     if (left <= 0 || right <= 0)
         return;
     int moves = min(left, right);
@@ -806,12 +809,12 @@ void EIC::checkGaussianFit(Peak &peak)
     //dim
     vector<float> pints(moves * 2 + 1);
 
-    int j = peak.pos + moves;
+    int j = peak.pos() + moves;
     if (j >= intensity.size())
         j = intensity.size() - 1;
     if (j < 1)
         j = 1;
-    int i = peak.pos - moves;
+    int i = peak.pos() - moves;
     if (i < 1)
         i = 1;
 
@@ -821,7 +824,12 @@ void EIC::checkGaussianFit(Peak &peak)
         pints[k] = intensity[i];
         k++;
     }
-    mzUtils::gaussFit(pints, &(peak.gaussFitSigma), &(peak.gaussFitR2));
+
+    float sigma = peak.gaussFitSigma();
+    float r2 = peak.gaussFitR2();
+    mzUtils::gaussFit(pints, &(sigma), &(r2));
+    peak.setGaussFitSigma(sigma);
+    peak.setGaussFitR2(r2);
 }
 
 void EIC::getPeakStatistics()
@@ -831,23 +839,23 @@ void EIC::getPeakStatistics()
         findPeakBounds(peaks[i]);
         getPeakDetails(peaks[i]);
 
-        if (peaks[i].peakAreaTopCorrected > maxAreaTopIntensity)
-            maxAreaTopIntensity = peaks[i].peakAreaTopCorrected;
+        if (peaks[i].peakAreaTopCorrected() > maxAreaTopIntensity)
+            maxAreaTopIntensity = peaks[i].peakAreaTopCorrected();
 
-        if (peaks[i].peakAreaTop > maxAreaTopNotCorrectedIntensity)
-            maxAreaTopNotCorrectedIntensity = peaks[i].peakAreaTop;
+        if (peaks[i].peakAreaTop() > maxAreaTopNotCorrectedIntensity)
+            maxAreaTopNotCorrectedIntensity = peaks[i].peakAreaTop();
 
-        if (peaks[i].peakAreaCorrected > maxAreaIntensity)
-            maxAreaIntensity = peaks[i].peakAreaCorrected;
+        if (peaks[i].peakAreaCorrected() > maxAreaIntensity)
+            maxAreaIntensity = peaks[i].peakAreaCorrected();
 
-        if (peaks[i].peakArea > maxAreaNotCorrectedIntensity)
-            maxAreaNotCorrectedIntensity = peaks[i].peakArea;
+        if (peaks[i].peakArea() > maxAreaNotCorrectedIntensity)
+            maxAreaNotCorrectedIntensity = peaks[i].peakArea();
     }
 
     //assign peak ranks based on total area of the peak
     sort(peaks.begin(), peaks.end(), Peak::compArea);
     for (unsigned int i = 0; i < peaks.size(); i++)
-        peaks[i].peakRank = i;
+        peaks[i].setPeakRank (i);
 }
 
 void EIC::deletePeak(unsigned int i)
@@ -948,8 +956,8 @@ vector<PeakGroup> EIC::groupPeaks(vector<EIC *> &eics,
         for (unsigned int j = 0; j < eics[i]->peaks.size(); j++)
         { //for every peak in the sample
             Peak &b = eics[i]->peaks[j];
-            b.groupNum = -1;
-            b.groupOverlap = FLT_MIN;
+            b.setGroupNum (-1);
+            b.setGroupOverlap (FLT_MIN);
 
             vector<Peak>::iterator itr = lower_bound(m->peaks.begin(), m->peaks.end(), b, Peak::compRtMin);
             int lb = (itr - (m->peaks.begin())) - 1;
@@ -964,16 +972,16 @@ vector<PeakGroup> EIC::groupPeaks(vector<EIC *> &eics,
 
                 float score;
 
-                float overlap = checkOverlap(a.rtmin, a.rtmax, b.rtmin, b.rtmax); //check for overlap
-                float distx = abs(b.rt - a.rt);
-                float disty = abs(b.peakIntensity - a.peakIntensity);
+                float overlap = checkOverlap(a.rtmin(), a.rtmax(), b.rtmin(), b.rtmax()); //check for overlap
+                float distx = abs(b.rt() - a.rt());
+                float disty = abs(b.peakIntensity() - a.peakIntensity());
 
                 if (useOverlap)
                 {
 
-                    if (overlap == 0 and a.rtmax < b.rtmin)
+                    if (overlap == 0 and a.rtmax() < b.rtmin())
                         continue;
-                    if (overlap == 0 and a.rtmin > b.rtmax)
+                    if (overlap == 0 and a.rtmin() > b.rtmax())
                         break;
 
                     if (distx > maxRtDiff && overlap < 0.2)
@@ -990,10 +998,10 @@ vector<PeakGroup> EIC::groupPeaks(vector<EIC *> &eics,
                     score = 1.0 / (distXWeight * distx + 0.01) / (distYWeight * disty + 0.01);
                 }
 
-                if (score > b.groupOverlap)
+                if (score > b.groupOverlap())
                 {
-                    b.groupNum = k;
-                    b.groupOverlap = score;
+                    b.setGroupNum (k);
+                    b.setGroupOverlap (score);
                 }
             }
 
@@ -1002,9 +1010,9 @@ vector<PeakGroup> EIC::groupPeaks(vector<EIC *> &eics,
                " " << b->groupOverlap << endl;
                */
 
-            if (b.groupNum != -1)
+            if (b.groupNum() != -1)
             {
-                PeakGroup &bestPeakGroup = pgroups[b.groupNum];
+                PeakGroup &bestPeakGroup = pgroups[b.groupNum()];
                 bestPeakGroup.addPeak(b);
             }
             else
@@ -1014,7 +1022,7 @@ vector<PeakGroup> EIC::groupPeaks(vector<EIC *> &eics,
                 grp.groupId = pgroups.size() + 1;
                 grp.setSlice(*slice);
                 grp.addPeak(b);
-                b.groupOverlap = 0;
+                b.setGroupOverlap (0);
             }
         }
     }

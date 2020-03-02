@@ -3557,11 +3557,11 @@ void MainWindow::showPeakInfo(Peak* _peak) {
 	if (_peak == NULL)
 		return;
 
-	mzSample* sample = _peak->getSample();
+        mzSample* sample = _peak->sample();
 	if (sample == NULL)
 		return;
 
-	Scan* scan = sample->getScan(_peak->scan);
+        Scan* scan = sample->getScan(_peak->scan());
 	if (scan == NULL)
 		return;
 
@@ -3578,12 +3578,12 @@ void MainWindow::showPeakInfo(Peak* _peak) {
 		isotopeWidget->setCharge(ionizationMode);
 	}
 
-	if (fragPanel->isVisible()) {
-		showFragmentationScans(_peak->peakMz);
+        if (fragPanel->isVisible()) {
+            showFragmentationScans(_peak->peakMz());
 	}
 
     if (spectralHitsDockWidget->isVisible() && scan) {
-        spectralHitsDockWidget->limitPrecursorMz(_peak->peakMz);
+        spectralHitsDockWidget->limitPrecursorMz(_peak->peakMz());
     }
 }
 
@@ -3594,11 +3594,11 @@ void MainWindow::spectaFocused(Peak* _peak) {
 	if (_peak == NULL)
 		return;
 
-	mzSample* sample = _peak->getSample();
+        mzSample* sample = _peak->sample();
 	if (sample == NULL)
 		return;
 
-	Scan* scan = sample->getScan(_peak->scan);
+        Scan* scan = sample->getScan(_peak->scan());
 	if (scan == NULL)
 		return;
 
@@ -3612,9 +3612,9 @@ void MainWindow::spectaFocused(Peak* _peak) {
 
 	//TODO: Sahil-Kiran, Added while merging mainwindow
     if (spectralHitsDockWidget->isVisible() && scan) {
-        spectralHitsDockWidget->limitPrecursorMz(_peak->peakMz);
+        spectralHitsDockWidget->limitPrecursorMz(_peak->peakMz());
     }
-	massCalcWidget->setMass(_peak->peakMz);
+    massCalcWidget->setMass(_peak->peakMz());
 
 }
 
@@ -3674,28 +3674,28 @@ QString MainWindow::groupTextExport(PeakGroup* group) {
 	for (int j = 0; j < group->peaks.size(); j++) {
 		QStringList peakinfo;
 		Peak& peak = group->peaks[j];
-		mzSample* s = peak.getSample();
+                mzSample* s = peak.sample();
 		string sampleName;
 		if (s != NULL)
 			sampleName = s->sampleName;
 
-		peakinfo << QString(sampleName.c_str())
-				<< QString::number(group->groupId) << compoundName
-				<< QString::number(expectedRt, 'f', 4)
-				<< QString::number(peak.peakMz, 'f', 4)
-				<< QString::number(peak.medianMz, 'f', 4)
-				<< QString::number(peak.rt, 'f', 4)
-				<< QString::number(peak.rtmin, 'f', 4)
-				<< QString::number(peak.rtmax, 'f', 4)
-				<< QString::number(peak.quality, 'f', 4)
-				<< QString::number(peak.peakIntensity, 'f', 4)
-				<< QString::number(peak.peakArea, 'f', 4)
-				<< QString::number(peak.peakSplineArea, 'f', 4)
-				<< QString::number(peak.peakAreaTop, 'f', 4)
-				<< QString::number(peak.peakAreaCorrected, 'f', 4)
-				<< QString::number(peak.noNoiseObs, 'f', 4)
-				<< QString::number(peak.signalBaselineRatio, 'f', 4)
-				<< QString::number(peak.fromBlankSample, 'f', 4);
+                peakinfo << QString(sampleName.c_str())
+                         << QString::number(group->groupId) << compoundName
+                         << QString::number(expectedRt, 'f', 4)
+                         << QString::number(peak.peakMz(), 'f', 4)
+                         << QString::number(peak.medianMz(), 'f', 4)
+                         << QString::number(peak.rt(), 'f', 4)
+                         << QString::number(peak.rtmin(), 'f', 4)
+                         << QString::number(peak.rtmax(), 'f', 4)
+                         << QString::number(peak.quality(), 'f', 4)
+                         << QString::number(peak.peakIntensity(), 'f', 4)
+                         << QString::number(peak.peakArea(), 'f', 4)
+                         << QString::number(peak.peakSplineArea(), 'f', 4)
+                         << QString::number(peak.peakAreaTop(), 'f', 4)
+                         << QString::number(peak.peakAreaCorrected(), 'f', 4)
+                         << QString::number(peak.noNoiseObs(), 'f', 4)
+                         << QString::number(peak.signalBaselineRatio(), 'f', 4)
+                         << QString::number(peak.fromBlankSample(), 'f', 4);
 		groupInfo << peakinfo.join("\t");
 	}
 	return groupInfo.join("\n");
@@ -4177,15 +4177,15 @@ void MainWindow::getLinks(Peak* peak) {
 
 	MassCutoff *massCutoff = getUserMassCutoff();
 
-	vector<mzLink> links = peak->findCovariants();
-	vector<mzLink> linksX = SpectraWidget::findLinks(peak->peakMz, scan, massCutoff,
+        vector<mzLink> links = peak->findCovariants();
+        vector<mzLink> linksX = SpectraWidget::findLinks(peak->peakMz(), scan, massCutoff,
 			ionizationMode);
 	for (int i = 0; i < linksX.size(); i++)
 		links.push_back(linksX[i]);
 
-	//correlations
-	float rtmin = peak->rtmin - 1;
-	float rtmax = peak->rtmax + 1;
+        //correlations
+        float rtmin = peak->rtmin() - 1;
+        float rtmax = peak->rtmax() + 1;
 	for (int i = 0; i < links.size(); i++) {
 		links[i].correlation = sample->correlation(links[i].mz1, links[i].mz2,
 			massCutoff, rtmin, rtmax, mavenParameters->eicType, mavenParameters->filterline);

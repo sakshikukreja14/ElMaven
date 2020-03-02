@@ -135,16 +135,16 @@ bool GroupFiltering::quantileFilters(PeakGroup *group) {
     int peaksAboveBlankRatio = 0;
     int peaksAboveMinQuality = 0;
     for (int i = 0; i < peaks.size(); i++) {
-        if (peaks[i].peakIntensity > _mavenParameters->minGroupIntensity) {
+        if (peaks[i].peakIntensity() > _mavenParameters->minGroupIntensity) {
             peaksAboveMinIntensity++;
         }
-        if (peaks[i].signalBaselineRatio > _mavenParameters->minSignalBaseLineRatio) {
+        if (peaks[i].signalBaselineRatio() > _mavenParameters->minSignalBaseLineRatio) {
             peaksAboveBaselineRatio++;
         }
-        if (peaks[i].peakIntensity > group->blankMax * _mavenParameters->minSignalBlankRatio){
+        if (peaks[i].peakIntensity() > group->blankMax * _mavenParameters->minSignalBlankRatio){
             peaksAboveBlankRatio++;
         }
-        if (peaks[i].quality > _mavenParameters->minQuality) {
+        if (peaks[i].quality() > _mavenParameters->minQuality) {
             peaksAboveMinQuality++;
         }
     }
