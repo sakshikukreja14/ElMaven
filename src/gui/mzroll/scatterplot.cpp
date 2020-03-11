@@ -273,7 +273,7 @@ void ScatterPlot::drawScatter(StatisticsVector<float>vecA,StatisticsVector<float
                 item->setToolTip( tr("%1,%2").arg(x).arg(y) );
 
                 if(group) {
-                    QString groupName = group->getSrmId().c_str(); //to implement
+                    QString groupName = group->srmId.c_str(); //to implement
                     presentGroups.push_back(group);
                     item->setData(0, QVariant::fromValue(group));
                     item->setToolTip( tr("(%1,%2) <br>%3 m/z: %4<br>rt: %5<br>pvalue: %6")

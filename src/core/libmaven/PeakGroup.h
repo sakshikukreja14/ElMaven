@@ -1,9 +1,9 @@
 #ifndef PEAKGROUP_H
 #define PEAKGROUP_H
 
-#include "datastructures/mzSlice.h"
 #include "Fragment.h"
 #include "Peak.h"
+#include "datastructures/mzSlice.h"
 #include "standardincludes.h"
 
 class mzSample;
@@ -18,78 +18,92 @@ class Adduct;
 
 using namespace std;
 
-class PeakGroup{
+class PeakGroup
+{
     private:
         Adduct* _adduct;
-
-    private:
         mzSlice _slice;
         bool _sliceSet;
-
         string _tableName;
 
     public:
-        enum class GroupType {None=0, C13=1, Adduct=2, Covariant=4, Isotope=5 };
-        enum QType	   {AreaTop=0,
-                        Area=1,
-                        Height=2,
-                        AreaNotCorrected=3,
-                        RetentionTime=4,
-                        Quality=5,
-                        SNRatio=6,
-                        AreaTopNotCorrected=7};
+        enum class GroupType {
+            None = 0,
+            C13 = 1,
+            Adduct = 2,
+            Covariant = 4,
+            Isotope = 5
+        };
+        enum QType {
+            AreaTop = 0,
+            Area = 1,
+            Height = 2,
+            AreaNotCorrected = 3,
+            RetentionTime = 4,
+            Quality = 5,
+            SNRatio = 6,
+            AreaTopNotCorrected = 7
+        };
+        /**
+         * @brief PeakGroup Default Constructor.
+         */
         PeakGroup();
+        /**
+         * @brief PeakGroup Copy Constructor.
+         * @param o
+         */
         PeakGroup(const PeakGroup& o);
-        PeakGroup& operator=(const PeakGroup& o);
-
+        /**
+         * @brief operator =    Assignment operator overloading
+         * @param o     PeakGroup object.
+         * @return
+         */
+        PeakGroup& operator = (const PeakGroup& o);
+        /**
+         * @brief operator ==   Equals to operator overloading.
+         * @param o     PeakGroup object.
+         * @return
+         */
         bool operator==(const PeakGroup* o);
         /**
-         * [copyObj ]
-         * @method copyObj
-         * @param  o       []
+         * @brief copyObj   Copies of object one PeakGroup
+         * to another.
+         * @param o
          */
         void copyObj(const PeakGroup& o);
-
         /**
-         * [copy ]
-         * @method copy
-         * @param  o    []
+         * @brief Destructor of class PeakGroup.
          */
-        void copy(const PeakGroup* o);
-
         ~PeakGroup();
 
         PeakGroup* parent;
-
         /**
-         * @brief This parent group represents a group for the parent (primary)
-         * ion, from which this adduct group would have formed.
+         * @brief This parent group represents a group for
+         * the parent (primary) ion, from which this adduct
+         * group would have formed.
          */
         PeakGroup* parentIon;
-
         vector<Peak> peaks;
         vector<PeakGroup> children;
         vector<PeakGroup> childAdducts;
         vector<PeakGroup> childrenBarPlot;
         vector<PeakGroup> childrenIsoWidget;
-        vector<mzSample*> samples;  //this varibale will hold only those sample which has been
-                                    //used for peak detection
+        /**
+         * @brief samples Sample which has been used
+         * for peak detection.
+         */
+        vector<mzSample*> samples;
         string srmId;
         string tagString;
-
-        /** classification label */
-        char label;
         /**
-         * @brief returns group name
-         * @method getName
-         * @detail returns compound name, tagString, srmID, meanMz@meanRt or groupId in this order of preference
-         * @return string
+         * classification label
          */
-        string getName();
+        char label;
 
         bool isFocused;
 
         QType quantitationType;
+        GroupType _type;
 
         int groupId;
         int metaGroupId;
@@ -109,19 +123,16 @@ class PeakGroup{
         float expectedMz;
         int totalSampleCount;
 
-        int  ms2EventCount;
+        int ms2EventCount;
 
         FragmentationMatchScore fragMatchScore;
         Fragment fragmentationPattern;
 
-        //isotopic information
+        // isotopic information
         float expectedAbundance;
-        int   isotopeC13count;
+        int isotopeC13count;
 
         double minIntensity;
-
-        //int quantileIntensityPeaks;
-        //int quantileQualityPeaks;
 
         float minRt;
         float maxRt;
@@ -137,7 +148,7 @@ class PeakGroup{
         float sampleMax;
 
         unsigned int maxNoNoiseObs;
-        unsigned int  maxPeakOverlap;
+        unsigned int maxPeakOverlap;
         float maxQuality;
         float avgPeakQuality;
         //@Kailash: group quality computed using neural network
@@ -153,80 +164,84 @@ class PeakGroup{
         int goodPeakCount;
         float groupRank;
 
-        //for sample contrasts  ratio and pvalue
+        // for sample contrasts  ratio and pvalue
         float changeFoldRatio;
         float changePValue;
-
+        /**
+         * @brief returns group name
+         * @method getName.
+         * @detail returns compound name, tagString, srmID,
+         * meanMz@meanRt or groupId in this order of preference.
+         * @return string
+         */
+        string getName();
+        /**
+         * @brief isMS1 Checks if scan level is 1.
+         * @return  bool value.
+         */
         bool isMS1();
-
         /**
-         * [hasSrmId ]
-         * @method hasSrmId
-         * @return []
+         * @brief hasSrmId  Checks if peakgroup has its SrmId set.
+         * @return
          */
-        bool  	hasSrmId() const   { return srmId.empty(); }
-
+        bool hasSrmId() const
+        {
+            return srmId.empty();
+        }
         /**
-         * [setSrmId ]
-         * @method setSrmId
-         * @param  id       []
-         * @return []
-         */
-        void  	setSrmId(string id)	  { srmId=id; }
-
-        /**
-         * [getSrmId ]
-         * @method getSrmId
-         * @return []
-         */
-        inline  string getSrmId() const { return srmId; }
-    
-        /**
-         * [hasCompoundLink ]
-         * @method hasCompoundLink
-         * @return []
+         * @brief hasCompoundLink   Checks if compound is linked
+         * with the slice.
+         * @return  bool value.
          */
         bool hasCompoundLink() const;
 
         /**
-         * [isEmpty ]
-         * @method isEmpty
-         * @return []
+         * @brief isEmpty   Checks if 'peaks' vector is empty.
+         * @return
          */
-        inline bool isEmpty() const   { if(peaks.size() == 0) return true; return false; }
-
+        inline bool isEmpty() const
+        {
+            if (peaks.size() == 0)
+                return true;
+            return false;
+        }
         /**
-         * [peakCount ]
-         * @method peakCount
-         * @return []
+         * @brief peakCount Returns the peaks vector size.
+         * @return
          */
-        inline unsigned int peakCount()  const { return peaks.size(); 	  }
-
+        inline unsigned int peakCount() const
+        {
+            return peaks.size();
+        }
         /**
-         * [childCount ]
-         * @method childCount
-         * @return []
+         * @brief childCount    Returns the children count of peakgroup.
+         * @return
          */
-        inline unsigned int childCount() const { return children.size(); }
-
-        inline unsigned int childCountBarPlot() const { return childrenBarPlot.size(); }
-
-        inline unsigned int childCountIsoWidget() const { return childrenIsoWidget.size(); }
-
-        Compound* getCompound() const;
-
-        void setCompound(Compound* compound);
-
-        void setSlice(const mzSlice& slice);
-
-        const mzSlice& getSlice() const;
-
+        inline unsigned int childCount() const
+        {
+            return children.size();
+        }
+        /**
+         * @brief childCountBarPlot Returns childBarPlot vector size.
+         * @return
+         */
+        inline unsigned int childCountBarPlot() const
+        {
+            return childrenBarPlot.size();
+        }
+        /**
+         * @brief childCountIsoWidget   Returns childIsoWidget vector size.
+         * @return
+         */
+        inline unsigned int childCountIsoWidget() const
+        {
+            return childrenIsoWidget.size();
+        }
         /**
          * @brief Check whether a slice has previosuly been set for this group.
          * @return true if a slice has been set, false otherwise.
          */
         bool hasSlice() const;
-
         /**
          * @brief Check whether both bounds of the group's slice are close to
          * zero in either m/z or rt dimensions.
@@ -235,28 +250,59 @@ class PeakGroup{
          * otherwise.
          */
         bool sliceIsZero() const;
+        /**
+         * @brief getCompound   Return associated slice's compound.
+         * @return
+         */
+        Compound* getCompound() const;
+        /**
+         * @brief setCompound   Sets the compound for the slice.
+         * @param compound
+         */
+        void setCompound(Compound* compound);
 
         /**
-         * [getParent ]
-         * @method getParent
-         * @return []
+         * @brief setSlice  Sets the value for the slice of peakgroup.
+         * @param slice
          */
-        inline PeakGroup* getParent() { return parent; }
+        void setSlice(const mzSlice& slice);
+        /**
+         * @brief getSlice Returns slice.
+         * @return
+         */
+        const mzSlice& getSlice() const;
 
+        /**
+         * @brief getParent Returns parent for the PeakGroup.
+         * @return
+         */
+        inline PeakGroup* getParent()
+        {
+            return parent;
+        }
+        /**
+         * @brief getPeaks Returns peak vector.
+         * @return
+         */
+        inline vector<Peak>& getPeaks()
+        {
+            return peaks;
+        }
+        /**
+         * @brief getChildren   Returns children vecotr of the peakgroup.
+         * @return
+         */
+        inline vector<PeakGroup>& getChildren()
+        {
+            return children;
+        }
 
-        inline vector<Peak>& getPeaks() { return peaks; }
-
-
-        inline vector<PeakGroup>& getChildren()  { return children; }
-
-        vector<Scan*> getRepresentativeFullScans(); //TODO: Sahil - Kiran, Added while merging mainwindow
-
+        vector<Scan*> getRepresentativeFullScans();
         /**
          * @brief find all MS2 scans for this group
          * @return vector of all MS2 scans for this group
          */
         vector<Scan*> getFragmentationEvents();
-
         /**
          * @brief build a consensus fragment spectra for this group
          * @param productPpmTolr ppm tolerance for fragment m/z
@@ -266,13 +312,12 @@ class PeakGroup{
         Scan* getAverageFragmentationScan(float productPpmTolr);
 
         void matchFragmentation(float ppmTolerance, string scoringAlgo);
-        
-        double getExpectedMz(int charge);
 
+        double getExpectedMz(int charge);
         /**
-         * [setParent ]
-         * @method setParent
-         * @param  p         []
+         * @brief setParent Sets the parent of the peakgroup and
+         * assigns its group type to 'Isotope'.
+         * @param p
          */
         inline void setParent(PeakGroup* p)
         {
@@ -280,14 +325,11 @@ class PeakGroup{
             if (parent != nullptr)
                 _type = GroupType::Isotope;
         }
-
         /**
-         * [setLabel ]
-         * @method setLabel
-         * @param  label    []
+         * @brief setLabel  Sets label value for the peakgroup.
+         * @param label
          */
         void setLabel(char label);
-
         /**
          * @brief Set the adduct form for this `PeakGroup`.
          * @details If the adduct is a type of parent ion, then this group's
@@ -295,113 +337,126 @@ class PeakGroup{
          * @param adduct Pointer to an `Adduct` object to be assigned.
          */
         void setAdduct(Adduct* adduct);
-
         /**
          * @brief Get the adduct form for this `PeakGroup`.
          * @return Pointer to the `Adduct` object set for this group.
          */
         Adduct* getAdduct() const;
-
         /**
          * [ppmDist ]
          * @method ppmDist
          * @param  cmass   []
          * @return []
          */
-        float massCutoffDist(float cmass,MassCutoff *massCutoff);
+        float massCutoffDist(float cmass, MassCutoff* massCutoff);
+        /**
+         * @brief addPeak   Adds the peak in peaks vector.
+         * @param peak
+         */
+        void addPeak(const Peak& peak);
+        /**
+         * @brief addChild  Adds child to the children vector.
+         * @param child
+         */
+        inline void addChild(const PeakGroup& child)
+        {
+            children.push_back(child);
+            children.back().parent = this;
+        }
+        /**
+         * @brief addChildBarPlot   Adds childBarPlot to its vector.
+         * @param child
+         */
+        inline void addChildBarPlot(const PeakGroup& child)
+        {
+            childrenBarPlot.push_back(child);
+            childrenBarPlot.back().parent = this;
+        }
+        /**
+         * @brief addChildIsoWidget Adds childIsoWidget to its vector.
+         * @param child
+         */
+        inline void addChildIsoWidget(const PeakGroup& child)
+        {
+            childrenIsoWidget.push_back(child);
+            childrenIsoWidget.back().parent = this;
+        }
+        /**
+         * @brief setGroupIdForChildren Sets groupId for children.
+         */
+        inline void setGroupIdForChildren()
+        {
+            for (auto& child : children)
+                child.groupId = groupId;
+        }
 
         /**
-         * [addPeak ]
-         * @method addPeak
-         * @param  peak    []
+         * @brief getPeak   Return the peak of particular sample
+         * from PeakGroup.
+         * @param sample
+         * @return
          */
-        void addPeak(const Peak& peak); 
-
-        /**
-         * [addChild ]
-         * @method addChild
-         * @param  child    []
-         */
-        inline void addChild(const PeakGroup& child) { children.push_back(child); children.back().parent = this;   }
-
-        inline void addChildBarPlot(const PeakGroup& child) { childrenBarPlot.push_back(child); childrenBarPlot.back().parent = this;   }
-
-        inline void addChildIsoWidget(const PeakGroup& child) { childrenIsoWidget.push_back(child); childrenIsoWidget.back().parent = this;   }
-
-        inline void setGroupIdForChildren() { for (auto& child : children) child.groupId = groupId; }
-
-        /**
-         * [getPeak ]
-         * @method getPeak
-         * @param  sample  []
-         * @return []
-         */
-
         Peak* getPeak(mzSample* sample);
-
-        GroupType _type;
-
         /**
-         * [type ]
-         * @method type
-         * @return []
+         * @brief type  Returns the group type of the PeakGroup.
+         * @return
          */
-        inline GroupType type() const { return _type; }
+        inline GroupType type() const
+        {
+            return _type;
+        }
         /**
-         * [setType ]
-         * @method setType
-         * @param  t       []
+         * @brief setType   Sets the group type for the peakGroup.
+         * @param t
          */
-        inline void setType(GroupType t)  { _type = t; }
-
-        void setQuantitationType(QType type) {quantitationType = type;}
-
+        inline void setType(GroupType t)
+        {
+            _type = t;
+        }
         /**
-         * [isIsotope ]
-         * @method isIsotope
-         * @return []
+         * @brief setQuantitationType   Sets the Quantitation type
+         * for the peakgroup.
+         * @param type
          */
-        inline bool isIsotope() const { return _type == GroupType::Isotope; }
-
+        void setQuantitationType(QType type)
+        {
+            quantitationType = type;
+        }
         /**
-         * [isAdduct ]
-         * @method isAdduct
-         * @return []
+         * @brief isIsotope Checks if the peakgroup has its group id
+         * as Isotope.
+         * @return
          */
-        inline bool isAdduct() const {  return _type == GroupType::Adduct; }
-
+        inline bool isIsotope() const
+        {
+            return _type == GroupType::Isotope;
+        }
         /**
-         * [summary ]
-         * @method summary
+         * @brief isAdduct  Checks if the peakgroup type is Adduct.
+         * @return
+         */
+        inline bool isAdduct() const
+        {
+            return _type == GroupType::Adduct;
+        }
+        /**
+         * @brief summary   Prints the summary of the PeakGroup.
          */
         void summary();
-
         /**
-         * [groupStatistics ]
-         * @method groupStatistics
+         * @brief groupStatistics Calculates various statistical value for
+         * data members of a peakgroup.
          */
         void groupStatistics();
-
         /**
-         * [updateQuality ]
-         * @method updateQuality
+         * @brief updateQuality Updates the quality of the peakgroup.
          */
         void updateQuality();
-
         /**
-         * [medianRt ]
-         * @method medianRt
-         * @return []
+         * @brief medianRt  Calculates the median of Rts.
+         * @return
          */
         float medianRt();
-
-        /**
-         * [meanRtW ]
-         * @method meanRtW
-         * @return []
-         */
-        float meanRtW();
-
         /**
          * @brief Obtain the deviation of this peak-group from its expected
          * retention time.
@@ -412,75 +467,40 @@ class PeakGroup{
          * minutes.
          */
         float expectedRtDiff();
-
         /**
-         * [reduce ]
-         * @method reduce
+         * @brief reduce Make sure there is only one peak per sample.
          */
         void reduce();
-
         /**
-         * [fillInPeaks ]
-         * @method fillInPeaks
-         * @param  eics        []
+         * @brief fillInPeaks   Adds the missing peaks in the peak vector according
+         * to eics vector.
+         * @param eics
          */
         void fillInPeaks(const vector<EIC*>& eics);
-
         /**
          * [computeAvgBlankArea ]
          * @method computeAvgBlankArea
          * @param  eics                []
          */
         void computeAvgBlankArea(const vector<EIC*>& eics);
-
         /**
-         * [groupOverlapMatrix ]
-         * @method groupOverlapMatrix
+         * @brief groupOverlapMatrix    Checks overlap of the peaks in peakgroup
+         * and updates the value for groupOverlapFrac
          */
         void groupOverlapMatrix();
-
         /**
-         * [getSamplePeak ]
-         * @method getSamplePeak
-         * @param  sample        []
-         * @return []
-         */
-        Peak* getSamplePeak(mzSample* sample);
-
-        /**
-         * [deletePeaks ]
-         * @method deletePeaks
+         * @brief deletePeaks   Clears the value of peaks in peakgroup.
          */
         void deletePeaks();
-
         /**
-         * [deletePeak ]
-         * @method deletePeak
-         * @param  index      []
-         * @return []
-         */
-        bool deletePeak(unsigned int index);
-
-        /**
-         * [clear ]
-         * @method clear
+         * @brief clear Sets the values of pointers to Null.
          */
         void clear();
-
         /**
          * [deleteChildren ]
          * @method deleteChildren
          */
         void deleteChildren();
-
-        /**
-         * [deleteChild ]
-         * @method deleteChild
-         * @param  index       []
-         * @return []
-         */
-        bool deleteChild(unsigned int index);
-
         /**
          * [deleteChild ]
          * @method deleteChild
@@ -488,123 +508,146 @@ class PeakGroup{
          * @return []
          */
         bool deleteChild(PeakGroup* child);
-
         /**
          * [copyChildren ]
          * @method copyChildren
          * @param  other        []
          */
         void copyChildren(const PeakGroup& other);
-
-        vector<float> getOrderedIntensityVector(vector<mzSample*>& samples, QType type);
-
         /**
-         * [reorderSamples ]
-         * @method reorderSamples
+         * @brief getOrderedIntensityVector Return intensity vectory
+         * ordered by samples.
+         * @param samples   mzSample object.
+         * @param type      Group type.
+         * @return
+         */
+        vector<float> getOrderedIntensityVector(vector<mzSample*>& samples,
+                                                QType type);
+        /**
+         * @brief reorderSamples    Sorts the samples according to peak intensity.
          */
         void reorderSamples();
-
         /**
-         * [compRt ]
-         * @method compRt
-         * @param  a      []
-         * @param  b      []
-         * @return []
+         * @brief compRt    Compares mean Rt of the two peakgroups.
+         * @param a         PeakGroup object.
+         * @param b         PeakGroup object.
+         * @return          Boolean value.
          */
-        static bool compRt(const PeakGroup& a, const PeakGroup& b ) { return(a.meanRt < b.meanRt); }
-
+        static bool compRt(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.meanRt < b.meanRt);
+        }
         /**
-         * [compMz ]
-         * @method compMz
-         * @param  a      []
-         * @param  b      []
-         * @return []
+         * @brief compMz    Compares mean Mz of the two peakgroups.
+         * @param a         PeakGroup object.
+         * @param b         PeakGroup object.
+         * @return          Boolean value.
          */
-        static bool compMz(const PeakGroup& a, const PeakGroup& b ) { return(a.meanMz > b.meanMz); }
-
+        static bool compMz(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.meanMz > b.meanMz);
+        }
         /**
-         * [compIntensity ]
-         * @method compIntensity
-         * @param  a             []
-         * @param  b             []
-         * @return []
+         * @brief compIntensity Compares max intensity of the two
+         * peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compIntensity(const PeakGroup& a, const PeakGroup& b ) { return(a.maxIntensity > b.maxIntensity); }
-
+        static bool compIntensity(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.maxIntensity > b.maxIntensity);
+        }
         /**
-         * [compArea ]
-         * @method compArea
-         * @param  a        []
-         * @param  b        []
-         * @return []
+         * @brief compArea  Compares max peak fractional area of two
+         * peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compArea(const PeakGroup& a, const PeakGroup& b ) { return(a.maxPeakFracionalArea > b.maxPeakFracionalArea); }
-
+        static bool compArea(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.maxPeakFracionalArea > b.maxPeakFracionalArea);
+        }
         /**
-         * [compQuality ]
-         * @method compQuality
-         * @param  a           []
-         * @param  b           []
-         * @return []
+         * @brief compQuality   Compares max quality of the two peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compQuality(const PeakGroup& a, const PeakGroup& b ) { return(a.maxQuality > b.maxQuality); }
-        //static bool compInfoScore(const PeakGroup& a, const PeakGroup& b ) { return(a.informationScore > b.informationScore); }
-
+        static bool compQuality(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.maxQuality > b.maxQuality);
+        }
         /**
-         * [compRank ]
-         * @method compRank
-         * @param  a        []
-         * @param  b        []
-         * @return []
+         * @brief compRank  Compares group rank of the two peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compRank(const PeakGroup& a, const PeakGroup& b ) { return(a.groupRank < b.groupRank); }
-
+        static bool compRank(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.groupRank < b.groupRank);
+        }
         /**
-         * [compRatio ]
-         * @method compRatio
-         * @param  a         []
-         * @param  b         []
-         * @return []
+         * @brief compRatio     Compares change fold ration of the two peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compRatio(const PeakGroup& a, const PeakGroup& b ) { return(a.changeFoldRatio < b.changeFoldRatio); }
-
+        static bool compRatio(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.changeFoldRatio < b.changeFoldRatio);
+        }
         /**
-         * [compPvalue ]
-         * @method compPvalue
-         * @param  a          []
-         * @param  b          []
-         * @return []
+         * @brief compPvalue    Compares p value of the two peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compPvalue(const PeakGroup* a, const PeakGroup* b ) { return(a->changePValue< b->changePValue); }
-
+        static bool compPvalue(const PeakGroup* a, const PeakGroup* b)
+        {
+            return (a->changePValue < b->changePValue);
+        }
         /**
-         * [compC13 ]
-         * @method compC13
-         * @param  a       []
-         * @param  b       []
-         * @return []
+         * @brief compC13   Compares isotopeC13count of the two peakgroups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compC13(const PeakGroup* a, const PeakGroup* b) { return(a->isotopeC13count < b->isotopeC13count); }
-
+        static bool compC13(const PeakGroup* a, const PeakGroup* b)
+        {
+            return (a->isotopeC13count < b->isotopeC13count);
+        }
         /**
-         * [compMetaGroup ]
-         * @method compMetaGroup
-         * @param  a             []
-         * @param  b             []
-         * @return []
+         * @brief compMetaGroup Compares metaGroupId for the groups.
+         * @param a     PeakGroup object.
+         * @param b     PeakGroup object.
+         * @return      Boolean value.
          */
-        static bool compMetaGroup(const PeakGroup& a, const PeakGroup& b) { return(a.metaGroupId < b.metaGroupId); }
-        bool operator< (const PeakGroup* b) const { return this->maxIntensity < b->maxIntensity; }
+        static bool compMetaGroup(const PeakGroup& a, const PeakGroup& b)
+        {
+            return (a.metaGroupId < b.metaGroupId);
+        }
+        /**
+         * @brief operator <    '<' operating overloading.
+         * @param b
+         * @return
+         */
+        bool operator<(const PeakGroup* b) const
+        {
+            return this->maxIntensity < b->maxIntensity;
+        }
 
         void calGroupRank(bool deltaRtCheckFlag,
-                            int qualityWeight,
-                            int intensityWeight,
-                            int deltaRTWeight);
+                          int qualityWeight,
+                          int intensityWeight,
+                          int deltaRTWeight);
         /**
          * @brief take list of sample and filter those which are marked as selected
-         * @details this method used for assigning samples to this group based on whether that samples
-         * are marked as selected.
-        */
+         * @details this method used for assigning samples to this group based on
+         * whether that samples are marked as selected.
+         */
         void setSelectedSamples(vector<mzSample*> vsamples);
 
         /**

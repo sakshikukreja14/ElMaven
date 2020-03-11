@@ -1233,7 +1233,7 @@ PeakGroup* mzFileIO::readGroupXML(QXmlStreamReader& xml, PeakGroup* parent)
 
     string srmId = xml.attributes().value("srmId").toString().toStdString();
     if (!srmId.empty())
-        group->setSrmId(srmId);
+        group->srmId = srmId;
 
     if (!compoundName.empty() && !compoundDB.empty()) {
         vector<Compound*> matches =

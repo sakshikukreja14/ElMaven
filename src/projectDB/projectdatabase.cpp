@@ -943,7 +943,7 @@ vector<PeakGroup*> ProjectDatabase::loadGroups(const vector<mzSample*>& loaded)
 
         string srmId = groupsQuery->stringValue("srm_id");
         if (!srmId.empty())
-            group->setSrmId(srmId);
+            group->srmId = srmId;
 
         if (!adductName.empty()) {
             group->setAdduct(_findAdductByName(adductName));
