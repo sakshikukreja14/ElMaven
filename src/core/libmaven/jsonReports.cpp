@@ -312,9 +312,10 @@ string JSONReports::_sanitizeJSONstring(string s)
 class JsonReportsFixture{
 
     private:
-            
-
-            Database database;
+            vector<mzSample*> _samples;
+            vector <PeakGroup> _allgroups;
+            MavenParameters* _mavenparameters;
+            Database _database;
             
             void _makeSampleList()
             {

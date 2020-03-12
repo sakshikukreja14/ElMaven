@@ -8,15 +8,16 @@
 #include "mzSample.h"
 #include "mzUtils.h"
 #include "boost/algorithm/string.hpp"
+#include "datastructures/adduct.h"
 
 void Database::removeDatabase(string dbName)
 {
     auto iter = begin(compoundsDB);
     while (iter < end(compoundsDB)) {
         auto compound = *iter;
-        if (compound->db() == dbName) {
-            compoundIdenticalCount.erase(compound->id() + compound->name() + dbName);
-            compoundIdNameDbMap.erase(compound->id() + compound->name() + dbName);
+        if (compound->db == dbName) {
+            _compoundIdenticalCount.erase(compound->id + compound->name + dbName);
+            _compoundIdNameDbMap.erase(compound->id + compound->name + dbName);
             iter = compoundsDB.erase(iter);
             delete compound;
         } else {
@@ -25,69 +26,107 @@ void Database::removeDatabase(string dbName)
     }
 }
 
-bool Database::addCompound(Compound* newCompound)
+bool Database::addCompound(Compound* c) {
+    if(c == NULL) return false;
+    bool compoundAdded = false;
+
+    //new compound id .. insert into compound list
+    if (!_compoundIdMap.count(c->id)) {
+        _compoundIdMap[c->id] = c;
+        compoundsDB.push_back(c);
+        compoundAdded = true;
+    } else {
+        //compound exists with the same name, match database
+        bool matched = false;
+        for(unsigned int i = 0; i < compoundsDB.size(); i++) {
+            Compound* currentCompound = compoundsDB[i];
+            if ( currentCompound->db == c->db && currentCompound->id == c->id) {
+                //compound from the same database
+                currentCompound->id = c->id;
+                currentCompound->name = c->name;
+                currentCompound->setFormula(c->formula());
+                currentCompound->srmId = c->srmId;
+                currentCompound->expectedRt = c->expectedRt;
+                currentCompound->charge = c->charge;
+                currentCompound->mass = c->mass;
+                currentCompound->precursorMz = c->precursorMz;
+                currentCompound->productMz = c->productMz;
+                currentCompound->collisionEnergy = c->collisionEnergy;
+                currentCompound->category = c->category;
+                matched = true;
+            }
+        }
+
+        if(!matched) {
+            compoundsDB.push_back(c);
+            compoundAdded = true;
+        }
+    }
+    return compoundAdded;
+}
+
+bool Database::addMascot_NISTCompound(Compound* newCompound)
 {
     if(newCompound == nullptr)
         return false;
 
     // existing compound, change its name according to the number of
     // compounds with the same ID
-    if (compoundIdenticalCount.count(newCompound->id()
-                                     + newCompound->name()
-                                     + newCompound->db())) {
-        int loadOrder = compoundIdenticalCount.at(newCompound->id()
-                                                  + newCompound->name()
-                                                  + newCompound->db());
+    if (_compoundIdenticalCount.count(newCompound->id
+                                     + newCompound->name
+                                     + newCompound->db)) {
+        int loadOrder = _compoundIdenticalCount.at(newCompound->id
+                                                  + newCompound->name
+                                                  + newCompound->db);
 
         // return false if any of the compounds having the same ID are the
         // exact same in all aspects.
+        auto originalName = newCompound->name;
         for (int i = 0; i < loadOrder; ++i) {
-            string name = newCompound->name();
+            string nameWithSuffix = originalName;
             if (i != 0)
-                name = name + " (" + to_string(i) + ")";
+                nameWithSuffix = originalName + " (" + to_string(i) + ")";
 
-            Compound* possibleCopy = compoundIdNameDbMap[newCompound->id()
-                                                         + name
-                                                         + newCompound->db()];
+            newCompound->name = nameWithSuffix;
+            Compound* possibleCopy = _compoundIdNameDbMap[newCompound->id
+                                                         + nameWithSuffix
+                                                         + newCompound->db];
             if (possibleCopy != nullptr && *newCompound == *possibleCopy)
                 return false;
+
+            newCompound->name = originalName;
         }
 
-        auto originalName = newCompound->name();
-        newCompound->setName (originalName
-                            + " ("
-                            + to_string(loadOrder)
-                            + ")");
-        compoundIdenticalCount[newCompound->id()
+        newCompound->name = originalName + " (" + to_string(loadOrder) + ")";
+        _compoundIdenticalCount[newCompound->id
                                + originalName
-                               + newCompound->db()] = ++loadOrder;
+                               + newCompound->db] = ++loadOrder;
     } else {
-        compoundIdenticalCount[newCompound->id()
-                               + newCompound->name()
-                               + newCompound->db()] = 1;
+        _compoundIdenticalCount[newCompound->id
+                               + newCompound->name
+                               + newCompound->db] = 1;
     }
 
-    compoundIdNameDbMap[newCompound->id()
-                        + newCompound->name()
-                        + newCompound->db()] = newCompound;
+    _compoundIdNameDbMap[newCompound->id
+                        + newCompound->name
+                        + newCompound->db] = newCompound;
     compoundsDB.push_back(newCompound);
     return true;
 }
-
 
 Compound* Database::findSpeciesByIdAndName(string id,
                                            string name,
                                            string dbName)
 {
-    if (compoundIdNameDbMap.count(id + name + dbName))
-        return compoundIdNameDbMap[id + name + dbName];
+    if (_compoundIdNameDbMap.count(id + name + dbName))
+        return _compoundIdNameDbMap[id + name + dbName];
     return NULL;
 }
 
 vector<Compound*> Database::findSpeciesById(string id, string dbName) {
     vector<Compound*> matches;
     for (auto compound : compoundsDB) {
-        if (compound->id() == id && compound->db() == dbName) {
+        if (compound->id == id && compound->db == dbName) {
             matches.push_back(compound);
         }
     }
@@ -95,21 +134,22 @@ vector<Compound*> Database::findSpeciesById(string id, string dbName) {
     return matches;
 }
 
-vector<Compound*> Database::findSpeciesByName(string name, string dbname) {
-		vector<Compound*> set;
-		for(unsigned int i=0; i < compoundsDB.size(); i++ ) {
-                                if (compoundsDB[i]->name() == name && compoundsDB[i]->db() == dbname) {
-					set.push_back(compoundsDB[i]);
-				}
-		}
-		return set;
+vector<Compound*> Database::findSpeciesByName(string name, string dbname)
+{
+    vector<Compound*> set;
+    for (unsigned int i = 0; i < compoundsDB.size(); i++) {
+        if (compoundsDB[i]->name == name && compoundsDB[i]->db == dbname) {
+            set.push_back(compoundsDB[i]);
+        }
+    }
+    return set;
 }
 
 vector<Compound*> Database::getCompoundsSubset(string dbname) {
 	vector<Compound*> subset;
-	for (unsigned int i=0; i < compoundsDB.size(); i++ ) {
-                        if (compoundsDB[i]->db() == dbname) {
-					subset.push_back(compoundsDB[i]);
+        for (unsigned int i=0; i < compoundsDB.size(); i++ ) {
+                        if (compoundsDB[i]->db == dbname) {
+                                        subset.push_back(compoundsDB[i]);
 			}
 	}
 	return subset;
@@ -121,7 +161,8 @@ vector<Compound*> Database::getKnowns() {
 
 map<string,int> Database::getDatabaseNames() {
 	map<string,int>dbnames;
-        for (unsigned int i=0; i < compoundsDB.size(); i++ ) dbnames[ compoundsDB[i]->db() ]++;
+        for (unsigned int i=0; i < compoundsDB.size(); i++ )
+            dbnames[ compoundsDB[i]->db ]++;
 	return dbnames;
 }
 
@@ -188,13 +229,13 @@ int Database::loadNISTLibrary(string filename,
         if (_startsWith(line, "NAME:")) {
             // before reading the next record or ending stream, save the
             // compound created from last record
-            if (currentCompound and !currentCompound->name().empty()) {
+            if (currentCompound and !currentCompound->name.empty()) {
                 if (!currentCompound->formula().empty()) {
                     auto formula = currentCompound->formula();
                     auto exactMass = MassCalculator::computeMass(formula, 0);
-                    currentCompound->setMass (exactMass);
+                    currentCompound->mass = exactMass;
                 }
-                bool flag = addCompound(currentCompound);
+                bool flag = addMascot_NISTCompound(currentCompound);
 
                 if (flag){
                     ++compoundCount;
@@ -207,7 +248,7 @@ int Database::loadNISTLibrary(string filename,
                 // new compound
                 string name = line.substr(6, line.length());
                 currentCompound = new Compound(name, name, "", 0);
-                currentCompound->setDb (dbName);
+                currentCompound->db = dbName;
                 capturePeaks = false;
             }
         }
@@ -216,17 +257,17 @@ int Database::loadNISTLibrary(string filename,
             continue;
 
         if (_startsWith(line, "MW:")) {
-            currentCompound->setMass (string2float(line.substr(3, line.length())));
+            currentCompound->mass = string2float(line.substr(3, line.length()));
         } else if (_startsWith(line, "CE:")) {
-            currentCompound->setCollisionEnergy (string2float(line.substr(3, line.length())));
+            currentCompound->collisionEnergy = string2float(line.substr(3, line.length()));
         } else if (_startsWith(line, "ID:")){
             string id = line.substr(4, line.length());
             if (id.size() > 0)
-                currentCompound->setId(id);
+                currentCompound->id = id;
         } else if (_startsWith(line, "LOGP:")) {
             currentCompound->logP = string2float(line.substr(5, line.length()));
         } else if (_startsWith(line, "RT:")){
-            currentCompound->setExpectedRt (string2float(line.substr(3, line.length())));
+            currentCompound->expectedRt = string2float(line.substr(3, line.length()));
         } else if (_startsWith(line, "SMILE:")){
             string smileString = line.substr(7, line.length());
             if (smileString.size() > 0)
@@ -236,9 +277,9 @@ int Database::loadNISTLibrary(string filename,
             if (smileString.size() > 0)
                 currentCompound->smileString = smileString;
         } else if (_startsWith(line, "PRECURSORMZ:")) {
-            currentCompound->setPrecursorMz (string2float(line.substr(13, line.length())));
+            currentCompound->precursorMz = string2float(line.substr(13, line.length()));
         } else if (_startsWith(line, "EXACTMASS:")) {
-            currentCompound->setMass (string2float(line.substr(10, line.length())));
+            currentCompound->mass = string2float(line.substr(10, line.length()));
         } else if (_startsWith(line,"ADDUCT:")) {
             currentCompound->adductString = line.substr(8, line.length());
         } else if (_startsWith(line, "FORMULA:")){
@@ -270,7 +311,7 @@ int Database::loadNISTLibrary(string filename,
                 currentCompound->setFormula (match.str(1));
             }
             if (regex_search(comment, match, retentionTimeMatch) && match.size() > 1) {
-                currentCompound->setExpectedRt (string2float(match.str(1)));
+                currentCompound->expectedRt = string2float(match.str(1));
             }
         } else if (_startsWith(line, "NUM PEAKS:")
                    || _startsWith(line, "NUMPEAKS:")) {
@@ -300,13 +341,14 @@ int Database::loadNISTLibrary(string filename,
                       lineCount);
         }
     }
-    if (currentCompound and !currentCompound->name().empty()) {
+    if (currentCompound and !currentCompound->name.empty()) {
         if (!currentCompound->formula().empty()) {
             auto formula = currentCompound->formula();
             auto exactMass = MassCalculator::computeMass(formula, 0);
-            currentCompound->setMass (exactMass);
+            currentCompound->mass = exactMass;
         }
-        bool flag = addCompound(currentCompound);
+        bool flag = addMascot_NISTCompound(currentCompound);
+        cerr<<flag<<endl;
         if (flag){
             ++compoundCount;
         }
@@ -323,7 +365,64 @@ bool Database::isSpectralLibrary(string dbName) {
     return false;
 }
 
+void Database::loadAdducts(string filename)
+{
+    ifstream myFile(filename.c_str());
+    if (!myFile.is_open()) return;
 
+    int loadCount = 0;
+    int lineCount = 0;
+    while (!myFile.eof()) {
+        string tempLine;
+        getline(myFile, tempLine);
+        if (tempLine.size() == 0)
+            continue;
+
+        string line = tempLine;
+        if (!line.empty() && line[0] == '#')
+            continue;
+        lineCount++;
+
+        if (lineCount == 1)
+            continue;
+
+        vector<string> fields;
+        mzUtils::split(line, ',', fields);
+
+        if(fields.size() < 2 )
+            continue;
+
+        string name = fields[0];
+        int nmol = string2float(fields[1]);
+        int charge = string2float(fields[2]);
+        float mass = string2float(fields[3]);
+
+        if (name.empty() || nmol < 0)
+            continue;
+        Adduct* a = new Adduct(name, nmol, charge, mass);
+        _adductsDB.push_back(a);
+        loadCount++;
+    }
+    cerr << "LOADCOUNT: " << loadCount;
+    myFile.close();
+}
+
+Adduct* Database::findAdductByName(string name)
+{
+    if(name == "[M+H]+") {
+        return MassCalculator::PlusHAdduct;
+    } else if(name == "[M-H]-") {
+        return MassCalculator::MinusHAdduct;
+    } else if(name == "[M]") {
+        return MassCalculator::ZeroMassAdduct;
+    }
+
+    for(auto adduct : _adductsDB) {
+        if (adduct->getName() == name)
+            return adduct;
+    }
+    return nullptr;
+}
 
 int Database::loadCompoundCSVFile(string filename) {
 
@@ -336,7 +435,7 @@ int Database::loadCompoundCSVFile(string filename) {
     vector<string> headers;
 
     // reset the contents of the vector containing the names of invalid rows
-    invalidRows.clear();
+    _invalidRows.clear();
 
     //assume that files are tab delimited, unless matched ".csv", then comma delimited
     string sep="\t";
@@ -456,18 +555,18 @@ Compound* Database::extractCompoundfromEachLine(vector<string>& fields, map<stri
     if ( mz > 0 || !formula.empty() || precursormz > 0) {
         Compound* compound = new Compound(id,name,formula,charge);
 
-        compound->setExpectedRt (rt);
+        compound->expectedRt = rt;
 
         if (mz == 0)
             mz = MassCalculator::computeMass(formula, charge);
 
 
-        compound->setMass(mz);
-        compound->setDb  (dbname);
-        compound->setExpectedRt(rt);
-        compound->setPrecursorMz (precursormz);
-        compound->setProductMz( productmz);
-        compound->setCollisionEnergy (collisionenergy);
+        compound->mass = mz;
+        compound->db = dbname;
+        compound->expectedRt = rt;
+        compound->precursorMz = precursormz;
+        compound->productMz = productmz;
+        compound->collisionEnergy = collisionenergy;
         compound->note = note;
 
         for(unsigned int i=0; i < categorylist.size(); i++)
@@ -478,7 +577,7 @@ Compound* Database::extractCompoundfromEachLine(vector<string>& fields, map<stri
 
     if (!name.empty())
         id = name;
-    invalidRows.push_back(id);
+    _invalidRows.push_back(id);
 
     return NULL;
 
@@ -552,9 +651,9 @@ int Database::loadMascotLibrary(string filename,
                                           "",
                                           charge);
 
-        compound->setExpectedRt ( specIter->getRTINSECONDS().first / 60.0f);
-        compound->setMass (specIter->getPEPMASS().first);
-        compound->setPrecursorMz(compound->mass());
+        compound->expectedRt = specIter->getRTINSECONDS().first / 60.0f;
+        compound->mass = specIter->getPEPMASS().first;
+        compound->precursorMz = compound->mass;
         compound->smileString = specIter->getSMILES();
         compound->ionizationMode = specIter->getIONMODE() == "Negative" ||
                                    specIter->getIONMODE() == "negative"? -1
@@ -572,8 +671,8 @@ int Database::loadMascotLibrary(string filename,
         compound->fragmentMzValues = fragmentMzValues;
         compound->fragmentIntensities = fragmentInValues;
 
-        compound->setDb( mzUtils::cleanFilename(filename));
-        addCompound(compound);
+        compound->db = mzUtils::cleanFilename(filename);
+        addMascot_NISTCompound(compound);
 
         if (signal) {
             (*signal)("Loading spectral library: " + filename,
@@ -587,94 +686,133 @@ int Database::loadMascotLibrary(string filename,
 }
 
 
+////////////////////////Test cases////////////////////
 
 TEST_CASE("Testing database class")
 {
     SUBCASE("Testing CSV Loading File")
     {
         Database db;
-        string mgfFile = "tests/doctest/test_loadCSV.csv";
+        string mgfFile = "tests/test-libmaven/test_loadCSV.csv";
         int rescsv = db.loadCompoundCSVFile(mgfFile);
         REQUIRE(rescsv == 10);
         vector<Compound*> compounds = db.getCompoundsSubset("test_loadCSV");
 
         vector<Compound*> compoundInput;
         Compound* c1 = new Compound("HMDB00653", "cholesteryl sulfate",
-                                    "C27H46O4S", 0, 17.25);
-        c1->setDb("test_loadCSV");
+                                    "C27H46O4S", 0);
+        c1->expectedRt = 17.25;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C05464", "Deoxycholic acid",
-                          "C26H43NO5", 0, 16.79);
-        c1->setDb("test_loadCSV");
+                          "C26H43NO5", 0);
+        c1->expectedRt = 16.79;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C15H28O7P2","trans_trans-farnesyl diphosphate",
-                          "C00448",0, 16.74);
-        c1->setDb("test_loadCSV");
+                          "C00448",0);
+        c1->expectedRt = 16.74;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("HMDB00619", "Cholic acid",
-                          "C24H40O5", 0, 16.69);
-        c1->setDb("test_loadCSV");
+                          "C24H40O5", 0);
+        c1->expectedRt = 16.69;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C00341", "Geranyl-PP",
-                          "C10H20O7P2", 0, 16.46) ;
-        c1->setDb("test_loadCSV");
+                          "C10H20O7P2", 0) ;
+        c1->expectedRt = 16.46;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C05463", "Taurodeoxycholic acid",
-                          "C26H45NO6S", 0, 16.23);
-        c1->setDb("test_loadCSV");
+                          "C26H45NO6S", 0);
+        c1->expectedRt = 16.23;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C00725", "lipoate",
-                          "C8H14O2S2", 0, 15.97);
-        c1->setDb("test_loadCSV");
+                          "C8H14O2S2", 0);
+        c1->expectedRt = 15.97;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C00356", "3-hydroxy-3-methylglutaryl-CoA-nega",
-                          "C27H44N7O20P3S", 0, 15.72);
-        c1->setDb("test_loadCSV");
+                          "C27H44N7O20P3S", 0);
+        c1->expectedRt = 15.72;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C00630", "butyryl-CoA",
-                          "C25H42N7O17P3S", 0, 15.72);
-        c1->setDb("test_loadCSV");
+                          "C25H42N7O17P3S", 0);
+        c1->expectedRt = 15.72;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         c1 = new Compound("C00083", "malonyl-CoA",
-                          "C24H38N7O19P3S", 0, 15.7);
-        c1->setDb("test_loadCSV");
+                          "C24H38N7O19P3S", 0);
+        c1->expectedRt = 15.7;
+        c1->db = "test_loadCSV";
         compoundInput.push_back(c1);
         delete(c1);
 
         for(size_t i = 0; i < compoundInput.size(); i++ ){
             for(size_t j = 0; j < compounds.size(); j++){
-                if(compoundInput[i]->id() == compounds[j]->id())
-                    REQUIRE(compoundInput[i] == compounds[j]);
+                if(compoundInput[i]->id == compounds[j]->id)
+                {
+                    Compound input = *compoundInput[i];
+                    Compound saved = *compounds[j];
+                    REQUIRE(input == saved);
+                }
             }
         }
+
+        vector<Compound*> compoundId;
+        compoundId = db.findSpeciesById("C00083",
+                                       "test_loadCSV");
+        for(size_t i = 0; i < compoundId.size(); i++){
+            REQUIRE(compoundId[i]->id == "C00083");
+        }
+
+        vector<Compound*> compoundName;
+        compoundName = db.findSpeciesByName("malonyl-CoA",
+                                           "test_loadCSV");
+        for(size_t i = 0; i < compoundName.size(); i++){
+            REQUIRE(compoundId[i]->name == "malonyl-CoA");
+        }
+
+        vector<Compound*> subset;
+        subset = db.getCompoundsSubset("test_loadCSV");
+        for(size_t i = 0; i < subset.size(); i++ )
+            REQUIRE(subset[i]->db == "test_loadCSV");
+
+        vector<Compound*> knowns;
+        knowns = db.getKnowns();
+        for(size_t i = 0; i < knowns.size(); i++)
+            REQUIRE(knowns[i]->db == "KNOWNS");
+
+        auto isSpectral = db.isSpectralLibrary("test_loadCSV");
+        REQUIRE(isSpectral == false);
+
     }
-
-
-
-
 
     SUBCASE("Testing Mascot Library")
     {
         Database db;
-        string mgfFile = "tests/doctest/test_Mascot.mgf";
+        string mgfFile = "tests/test-libmaven/test_Mascot.mgf";
         int resMgf = db.loadMascotLibrary(mgfFile);
         REQUIRE(resMgf == 10);
         vector<Compound*> compounds = db.getCompoundsSubset("test_Mascot");
@@ -682,13 +820,12 @@ TEST_CASE("Testing database class")
         Compound* c1 = new Compound("HMDB:HMDB04095-2361 5-Methoxytryptamine M-H",
                                     "HMDB:HMDB04095-2361 5-Methoxytryptamine M-H",
                                     "", 1);
-        c1->setMass(189.103);
-        float rt = -0.0166667f;
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 189.103;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = -1;
         c1->smileString = "COC1=CC2=C(NC=C2CCN)C=C1";
-        c1->setPrecursorMz(189.103);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 189.103;
+        c1->db = "test_Mascot";
         double mz1[] = {143.0,144.0,173.0, 175.0,
                         188.0, 190.0};
         for(int i = 0; i < 6; i++)
@@ -704,12 +841,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00099-156 L-Cystathionine M+H",
                           "HMDB:HMDB00099-156 L-Cystathionine M+H",
                           "", 1);
-        c1->setMass(223.075);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 223.075;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "N[C@@H](CCSC[C@H](N)C(O)=O)C(O)=O";
-        c1->setPrecursorMz(223.075);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 223.075;
+        c1->db = "test_Mascot";
         double mz2[] = {56.261, 88.097,
                         133.997, 177.012,
                         222.983};
@@ -726,12 +863,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00021-38 Iodotyrosine M+H",
                           "HMDB:HMDB00021-38 Iodotyrosine M+H",
                           "", 1);
-        c1->setMass(307.978);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 307.978;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "N[C@@H](CC1=CC=C(O)C(I)=C1)C(O)=O";
-        c1->setPrecursorMz(307.978);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 307.978;
+        c1->db = "test_Mascot";
         double mz3[] = {89.975, 94.035, 106.854,
                         108.236, 118.003, 119.876,
                         134.711, 248.732, 261.798};
@@ -748,12 +885,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00145-218 Estrone M+H",
                           "HMDB:HMDB00145-218 Estrone M+H",
                           "", 1);
-        c1->setMass(271.17);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 271.17;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "[H][C@@]12CCC(=O)[C@@]1(C)CC[C@]1([H])C3=C(CC[C@@]21[H])C=C(O)C=C3";
-        c1->setPrecursorMz(271.17);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 271.17;
+        c1->db = "test_Mascot";
         double mz4[] = {199.0, 271.0, 272.0};
         for(int i = 0; i < 3; i++)
             c1->fragmentMzValues.push_back(mz4[i]);
@@ -766,12 +903,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00258-449 Sucrose M+H",
                           "HMDB:HMDB00258-449 Sucrose M+H",
                           "", 1);
-        c1->setMass(343.124);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 343.124;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "OC[C@H]1O[C@@](CO)(O[C@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2O)[C@@H](O)[C@@H]1O";
-        c1->setPrecursorMz(343.124);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 343.124;
+        c1->db = "test_Mascot";
         double mz5[] = {55.239, 69.118, 73.123,
                         85.059, 97.026, 99.025,
                         108.994, 114.982, 126.974,
@@ -790,12 +927,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00032-52 7-Dehydrocholesterol M+H",
                           "HMDB:HMDB00032-52 7-Dehydrocholesterol M+H",
                           "", 1);
-        c1->setMass(385.347);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 385.347;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "[H][C@@]12CC[C@H]([C@H](C)CCCC(C)C)[C@@]1(C)CC[C@@]1([H])C2=CC=C2C[C@@H](O)CC[C@]12C";
-        c1->setPrecursorMz(385.347);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 385.347;
+        c1->db = "test_Mascot";
         double mz6[] = {43.315, 55.297,
                         57.193, 69.167,
                         71.228, 81.111,
@@ -870,12 +1007,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00536-758 Adenylsuccinic acid M+H",
                           "HMDB:HMDB00536-758 Adenylsuccinic acid M+H",
                           "", 1);
-        c1->setMass(464.082);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 464.082;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "O[C@@H]1[C@@H](COP(O)(O)=O)O[C@H]([C@@H]1O)N1C=NC2=C1N=CN=C2NC(CC(O)=O)C(O)=O";
-        c1->setPrecursorMz(464.082);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 464.082;
+        c1->db = "test_Mascot";
         double mz7[] = {251.0, 252.0,
                         253.0, 386.0,
                         387.0, 431.0,
@@ -894,12 +1031,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00620-837 Glutaconic acid M-H",
                           "HMDB:HMDB00620-837 Glutaconic acid M-H",
                           "", 1);
-        c1->setMass(129.019);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 129.019;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = -1;
         c1->smileString = "OC(=O)C\\C=C\\C(O)=O";
-        c1->setPrecursorMz(129.019);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 129.019;
+        c1->db = "test_Mascot";
         double mz8[] = {41.317, 85.036, 128.921};
         for(int i = 0; i < 3; i++)
             c1->fragmentMzValues.push_back(mz8[i]);
@@ -912,12 +1049,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00700-976 Hydroxypropionic acid M+H",
                           "HMDB:HMDB00700-976 Hydroxypropionic acid M+H",
                           "", 1);
-        c1->setMass(91.0395);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 91.0395;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "OCCC(O)=O";
-        c1->setPrecursorMz(91.0395);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 91.0395;
+        c1->db = "test_Mascot";
         double mz9[] = {54.152, 55.397,
                         55.522, 63.364,
                         72.451, 73.322,
@@ -937,12 +1074,12 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB:HMDB00705-984 Hexanoylcarnitine M+H",
                           "HMDB:HMDB00705-984 Hexanoylcarnitine M+H",
                           "", 1);
-        c1->setMass(260.186);
-        c1->setExpectedRt(-1/60.0f);
+        c1->mass = 260.186;
+        c1->expectedRt = -1/60.0f;
         c1->ionizationMode = 1;
         c1->smileString = "CCCCCC(=O)OC(CC([O-])=O)C[N+](C)(C)C";
-        c1->setPrecursorMz(260.186);
-        c1->setDb("test_Mascot");
+        c1->precursorMz = 260.186;
+        c1->db = "test_Mascot";
         double mz10[] = {60.437, 85.247,
                         99.242, 144.142,
                         201.043, 260.119};
@@ -961,20 +1098,20 @@ TEST_CASE("Testing database class")
     SUBCASE("Testing MSP File")
     {
         Database db;
-        string mspFile = "tests/doctest/test_NISTLibrary.msp";
+        string mspFile = "tests/test-libmaven/test_NISTLibrary.msp";
         int resMsp = db.loadNISTLibrary(mspFile);
         REQUIRE(resMsp == 10);
         vector<Compound*> compounds = db.getCompoundsSubset("test_NISTLibrary");
 
         Compound* c1 = new Compound("HMDB00902", "NAD-20.0,50.0,100.0",
                                    "C21H27N7O14P2", 0);
-        c1->setMass(663.109121804);
+        c1->mass = 663.109121804;
         c1->category.push_back("None");
         c1->smileString = "NC(=O)c1ccc[n+](C2OC(COP(=O)([O-])OP(=O)(O)OCC3OC(n4cnc5c(N)ncnc54)C(O)C3O)C(O)C2O)c1";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -3.6479;
-        c1->setDb("test_NISTLibrary");
+        c1->db = "test_NISTLibrary";
         double mz1[] = {62.964214325, 78.9593391418,
                         92.0254847209, 96.9695861816,
                         107.036354065, 134.047064209,
@@ -1022,13 +1159,13 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00641","L-GLUTAMINE-20.0,50.0,100.0",
                           "C5H10N2O3", 0);
-        c1->setMass(146.06914218);
+        c1->mass = 146.06914218;
         c1->category.push_back("None");
         c1->smileString = "NC(=O)CCC(N)C(=O)O";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -1.3362;
-        c1->setDb("test_NISTLibrary");
+        c1->db = "test_NISTLibrary";
         double mz2[] = {52.0191116333, 58.0298690796,
                         66.0349807739, 67.0301628113,
                         70.0298519135, 71.0140228271,
@@ -1091,12 +1228,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00965","HYPOTAURINE-20.0,50.0,100.0",
                           "C2H7NO2S",0);
-        c1->setMass(109.019749464);
+        c1->mass = 109.019749464;
         c1->category.push_back("None");
         c1->smileString = "NCCS(=O)O";
-        c1->setDb("test_NISTLibrary");
+        c1->db = "test_NISTLibrary";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -0.8332;
         double mz3[] = {63.9624799093, 64.9702987671, 108.01247406};
         for(int i=0; i < 3; i++)
@@ -1112,12 +1249,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00175","INOSINE 5'-PHOSPHATE-20.0,50.0,100.0",
                           "C10H13N4O8P", 0);
-        c1->setMass(348.047100006);
-        c1->setDb("test_NISTLibrary");
+        c1->mass = 348.047100006;
+        c1->db = "test_NISTLibrary";
         c1->category.push_back("None");
         c1->smileString ="O=c1nc[nH]c2c1ncn2C1OC(COP(=O)(O)O)C(O)C1O";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -2.1519;
         double mz4[]= {62.964050293, 65.0145721436, 66.0098419189,
                        78.9590606689, 92.0253245036, 96.9695968628,
@@ -1146,12 +1283,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00094","CITRATE-20.0,50.0,100.0",
                           "C6H8O7",0);
-        c1->setDb("test_NISTLibrary");
-        c1->setMass(192.027002596);
+        c1->db = "test_NISTLibrary";
+        c1->mass = 192.027002596;
         c1->category.push_back("None");
         c1->smileString = "O=C(O)CC(O)(CC(=O)O)C(=O)O";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -1.2485;
         double mz5[]= {57.0346002579, 58.9589700699,
                        59.0139074326, 67.0189723969,
@@ -1202,12 +1339,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00094", "CITRATE-20.0,50.0,100.0 (1)",
                           "C6H8O7", 0);
-        c1->setMass(192.027002596);
-        c1->setDb("test_NISTLibrary");
+        c1->mass = 192.027002596;
+        c1->db = "test_NISTLibrary";
         c1->category.push_back("None");
         c1->smileString = "O=C(O)CC(O)(CC(=O)O)C(=O)O";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -1.2485;
         double mz6[] = {57.0345865885, 58.9589468638,
                         59.0138645172, 67.0189628601,
@@ -1255,12 +1392,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00094","CITRATE-20.0,50.0,100.0 (2)",
                           "C6H8O7",0);
-        c1->setDb("test_NISTLibrary");
-        c1->setMass(192.027002596);
+        c1->db = "test_NISTLibrary";
+        c1->mass = 192.027002596;
         c1->category.push_back("None");
         c1->smileString ="O=C(O)CC(O)(CC(=O)O)C(=O)O";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -1.2485;
         double mz7[] = {57.0345850405, 59.0138343464,
                         59.9852591621, 67.0189613674,
@@ -1315,12 +1452,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00167","L-THREONINE-20.0,50.0,100.0",
                           "C4H9NO3",0);
-        c1->setDb("test_NISTLibrary");
-        c1->setMass(119.058243148);
+        c1->db = "test_NISTLibrary";
+        c1->mass = 119.058243148;
         c1->category.push_back("None");
         c1->smileString ="CC(O)C(N)C(=O)O";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -1.2209;
         double mz8[]={72.0091552734, 74.0247751872, 118.050979614};
         for(int i = 0; i < 3; i++)
@@ -1337,9 +1474,9 @@ TEST_CASE("Testing database class")
         c1 = new Compound("HMDB01366","PURINE-20.0,50.0,100.0",
                           "C5H4N4",0);
 
-        c1->setDb("test_NISTLibrary");
-        c1->setMass(120.043596128);
-        c1->setCollisionEnergy(200);
+        c1->db = "test_NISTLibrary";
+        c1->mass = 120.043596128;
+        c1->collisionEnergy = 200;
         c1->ionizationMode = -1;
         c1->category.push_back("None");
         c1->smileString ="c1ncc2[nH]cnc2n1";
@@ -1366,12 +1503,12 @@ TEST_CASE("Testing database class")
 
         c1 = new Compound("HMDB00230","N-ACETYLNEURAMINATE-20.0,50.0,100.0",
                           "C11H19NO9", 0);
-        c1->setDb("test_NISTLibrary");
-        c1->setMass(309.105981188);
+        c1->db = "test_NISTLibrary";
+        c1->mass = 309.105981188;
         c1->category.push_back("None");
         c1->smileString = "CC(=O)NC1C(O)CC(O)(C(=O)O)OC1C(O)C(O)CO";
         c1->ionizationMode = -1;
-        c1->setCollisionEnergy(200);
+        c1->collisionEnergy = 200;
         c1->logP = -3.8718;
         double mz10[] = {52.0190925598, 55.0188713074,
                          57.0343933105, 58.0060195923,
@@ -1425,6 +1562,68 @@ TEST_CASE("Testing database class")
         c1->fragmentIonTypes[26] = "2";
         REQUIRE(*c1 == *compounds[9]);
         delete(c1);
+
+        Compound* comp = db.findSpeciesByIdAndName("HMDB00230",
+                                                   "N-ACETYLNEURAMINATE-20.0,50.0,100.0",
+                                                   "test_NISTLibrary");
+        REQUIRE(comp);
+
+
+    }
+
+    SUBCASE("Testing load Adducts")
+    {
+        Database db;
+        string adductFile = "tests/test-libmaven/test_adducts.csv";
+        db.loadAdducts(adductFile);
+        vector<Adduct*> adductDb = db.adductsDB();
+        REQUIRE(adductDb.size() == 10);
+        vector<Adduct*> adductInput;
+
+        Adduct* a1 = new Adduct("[M+H]+", 1, 1, 1.0072277);
+        adductInput.push_back(a1);
+        delete(a1);
+        Adduct* a2 = new Adduct("[M+NH4]+", 1, 1, 18.033823);
+        adductInput.push_back(a2);
+        delete(a2);
+        Adduct* a3 = new Adduct("[M+H3O]+", 1, 1, 19.01839);
+        adductInput.push_back(a3);
+        delete(a3);
+        Adduct* a4 = new Adduct("[M+Na]+", 1, 1, 22.98992);
+        adductInput.push_back(a4);
+        delete(a4);
+        Adduct* a5 = new Adduct("[M+CH3OH+H]+", 1, 1, 33.0335);
+        adductInput.push_back(a5);
+        delete(a5);
+        Adduct* a6 = new Adduct("[M+K]+", 1, 1, 38.963158);
+        adductInput.push_back(a6);
+        delete(a6);
+        Adduct* a7 = new Adduct("[M+ACN+H]+", 1, 1, 42.033777);
+        adductInput.push_back(a7);
+        delete(a7);
+        Adduct* a8 = new Adduct("[M+2Na-H]+", 1, 1, 44.972616);
+        adductInput.push_back(a8);
+        delete(a8);
+        Adduct* a9 = new Adduct("[M+ACN+Na]+", 1, 1, 64.016471);
+        adductInput.push_back(a9);
+        delete(a9);
+        Adduct* a10 = new Adduct("[M+NaHO2CH]+", 1, 1, 68.995402);
+        adductInput.push_back(a10);
+        delete(a10);
+        for(size_t i = 0; i < adductInput.size(); i++ ){
+            for(size_t j = 0; j < adductDb.size(); j++){
+                if(adductInput[i]->getName() == adductDb[j]->getName())
+                {
+                    REQUIRE(adductInput[i]->getMass() == adductDb[j]->getMass());
+                    REQUIRE(adductInput[i]->getCharge() == adductDb[j]->getCharge());
+                    REQUIRE(adductInput[i]->getNmol() == adductDb[j]->getNmol());
+                    REQUIRE(adductInput[i]->getName() == adductDb[j]->getName());
+                }
+            }
+        }
+
+        auto adduct = db.findAdductByName("[M+NaHO2CH]+");
+        REQUIRE(adduct->getName() == "[M+NaHO2CH]+");
     }
 
 }

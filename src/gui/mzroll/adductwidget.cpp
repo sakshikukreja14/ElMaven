@@ -40,7 +40,8 @@ AdductWidget::AdductWidget(MainWindow* parent) :
 void AdductWidget::loadAdducts()
 {
     adductList->clear();
-    for (auto adduct : DB.adductsDB) {
+    vector<Adduct*> adductsDB = DB.adductsDB();
+    for (auto adduct : adductsDB) {
         auto * item = new NumericTreeWidgetItem(adductList, AdductType);
         item->setCheckState(0, Qt::Unchecked);
         item->setData(0, Qt::UserRole, QVariant::fromValue(adduct));

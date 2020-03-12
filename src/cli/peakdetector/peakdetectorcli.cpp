@@ -601,10 +601,11 @@ void PeakDetectorCLI::loadCompoundsFile()
     }
 
     // check for invalid compounds
-    if (_db.invalidRows.size() > 0) {
+    vector<string> invalidRows = _db.invalidRows();
+    if (invalidRows.size() > 0) {
         string debugStr = "The following compounds had insufficient information "
                           "for peak detection, and were not loaded:\n";
-        for (auto compoundID : _db.invalidRows)
+        for (auto compoundID : invalidRows)
             debugStr += " - " + compoundID + "\n";
         _log->debug() << debugStr << std::flush;
     }

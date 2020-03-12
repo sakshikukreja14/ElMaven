@@ -676,22 +676,6 @@ void TableDockWidget::exportGroupsToSpreadsheet() {
   } else {
     reportType = CSVReports::ReportType::GroupReport;
   }
-  
-
-    CSVReports* csvreports;
-    
-    if(flag == 'g'){
-        csvreports = new CSVReports(fileName.toStdString(), CSVReports::ReportType::GroupReport, 
-                                                samples,_mainwindow->getUserQuantType(),
-                                                prmGroupExists, includeSetNamesLines,
-                                                _mainwindow->mavenParameters);
-    }
-    else if(flag == 'p'){
-        csvreports = new CSVReports(fileName.toStdString(), CSVReports::ReportType::PeakReport, 
-                                                samples,_mainwindow->getUserQuantType(),
-                                                prmGroupExists, includeSetNamesLines,
-                                                _mainwindow->mavenParameters);
-    }
 
     CSVReports* csvreports;
 

@@ -341,10 +341,10 @@ void PathwayWidget::setCompound(Compound* c) {
 		if (list.size() > 1)
 			compoundId = list[0];
 		string id = compoundId.toStdString();
-		for (int i = 0; i < DB.compoundsDB.size(); i++) {
-			if (DB.compoundsDB[i]->db == "KEGG"
-					&& DB.compoundsDB[i]->id == id) {
-				c = DB.compoundsDB[i];
+                for (int i = 0; i < DB.compoundsDB.size(); i++) {
+                    if (DB.compoundsDB[i]->db == "KEGG"
+                                        && DB.compoundsDB[i]->id == id) {
+                                c = DB.compoundsDB[i];
 				break;
 			}
 		}
@@ -678,65 +678,8 @@ bool PathwayWidget::setPathway(QString pid) {
 	showLabels(true);
 }
 
-bool PathwayWidget::saveLayout() {
-	if (_pathwayId.isEmpty())
-		return false;
-
-	//QSqlDatabase* db = mw->getLocalDB();
-
-	QSqlDatabase& db = DB.getLigandDB();
-	QSqlQuery query(db);
-	db.transaction();
-
-	query.prepare("delete from pathways_layout where pathway_id = ?");
-	query.addBindValue(_pathwayId);
-	query.exec();
-
-	query.prepare(
-			"insert into pathways_layout(pathway_id,species_id,x,y) values(?,?,?,?)");
-	Q_FOREACH (Node* n, nodelist ){
-	QString id = n->getNote();
-
-	if ( n->isMetabolite() ) {
-		Compound* c = ((MetaboliteNode*) n)->getCompound();
-		if (c) id = QString(c->id.c_str());
-	}
-
-	query.addBindValue(_pathwayId);
-	query.addBindValue(id);
-	query.addBindValue(n->pos().x() );
-	query.addBindValue(n->pos().y() );
-	if (!query.exec()) qDebug() << query.lastError();
-}
-	query.clear();
-
-	if (_pathwayId.contains("CUSTOM_")) {
-		query.prepare("delete from pathways where pathway_id = ?");
-		query.addBindValue(_pathwayId);
-		if (!query.exec())
-			qDebug() << query.lastError();
-		query.clear();
-
-		query.prepare(
-				"insert into pathways(pathway_id,pathway_name,reaction_id,database) values(?,?,?,?)");
-		Q_FOREACH (Node* n, nodelist ){
-		if (n->isEnzyme() ) {
-			Reaction* r = ((EnzymeNode*) n)->getReaction();
-			query.addBindValue(_pathwayId);
-			query.addBindValue("Layout based on "+_pathwayId);
-			query.addBindValue(r->id.c_str());
-			query.addBindValue("CUSTOM");
-			if (!query.exec()) qDebug() << query.lastError();
-		}
-	}
-		query.clear();
-	}
-
-	db.commit();
-}
-
-bool PathwayWidget::loadLayout(QString pid) {
-	//qDebug() << "PathwayWidget::loadLayout() " << pid << endl;
+bool PathwayWidget::saveLayout()
+{
 
 }
 

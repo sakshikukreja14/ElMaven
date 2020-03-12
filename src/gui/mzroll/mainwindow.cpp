@@ -198,24 +198,16 @@ using namespace mzUtils;
 		#endif
 	}
 
-	QString pathwaysFolder = settings->value("pathwaysFolder").value<QString>();
-	if (!QFile::exists(pathwaysFolder))
-		pathwaysFolder = dataDir + "/" + "pathways";
+        QString pathwaysFolder = settings->value("pathwaysFolder").value<QString>();
+        if (!QFile::exists(pathwaysFolder))
+            pathwaysFolder = dataDir + "/" + "pathways";
 
-	QString ligandDbFilename = pathwaysFolder + "/"
-			+ settings->value("ligandDbFilename").value<QString>();
-	if (QFile::exists(ligandDbFilename)) {
-		DB.connect(ligandDbFilename.toStdString());
-		DB.loadAll();
-	}
+        QString ligandDbFilename = pathwaysFolder + "/"
+                                   + settings->value("ligandDbFilename").value<QString>();
 
-	QString commonFragments = dataDir + "/" + "FRAGMENTS.csv";
-	if (QFile::exists(commonFragments))
-		DB.loadFragments(commonFragments.toStdString());
-
-	clsf = new ClassifierNeuralNet();    //clsf = new ClassifierNaiveBayes();
-		mavenParameters = new MavenParameters(QString(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QDir::separator() + "lastRun.xml").toStdString());
-	_massCutoffWindow = new MassCutoff();
+        clsf = new ClassifierNeuralNet();    //clsf = new ClassifierNaiveBayes();
+        mavenParameters = new MavenParameters(QString(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QDir::separator() + "lastRun.xml").toStdString());
+        _massCutoffWindow = new MassCutoff();
 
 
     QString clsfModelFilename;
@@ -1860,9 +1852,8 @@ void MainWindow::_postCompoundsDBLoadActions(QString filename,
     string dbName = mzUtils::cleanFilename(filename.toStdString());
 
     bool reloading = false;
-    deque<Compound*> compoundsDB = DB.getCompoundsDB();
-    for (int i = 0; i < compoundsDB.size(); i++) {
-        Compound* currentCompound = compoundsDB[i];
+    for (int i = 0; i < DB.compoundsDB.size(); i++) {
+        Compound* currentCompound = DB.compoundsDB[i];
         if (currentCompound->db == dbName) {
             reloading = true;
             break;
@@ -1933,15 +1924,17 @@ void MainWindow::_notifyIfBadCompoundsDB(QString filename,
                               & ~Qt::WindowCloseButtonHint);
 
         string msgString = "Following are the unknown column name(s) found:";
-        if (DB.notFoundColumns.size() > 0) {
-            for (const auto& column : DB.notFoundColumns) {
+        vector<string> notFoundColumn = DB.notFoundColumns();
+        if (notFoundColumn.size() > 0) {
+            for (const auto& column : notFoundColumn) {
                  msgString += "\n - " + column;
             }
             msgBox.setDetailedText(QString::fromStdString(msgString));
         }
         msgBox.open();
     } else {
-        if (DB.notFoundColumns.size() > 0) {
+        vector<string> notFoundColumn = DB.notFoundColumns();
+        if (notFoundColumn.size() > 0) {
             analytics->hitEvent("Load Compound DB",
                                 "Column Error",
                                 "Partial Failure");
@@ -1954,13 +1947,14 @@ void MainWindow::_notifyIfBadCompoundsDB(QString filename,
 
             string msgString = "Following are the unknown column name(s) "
                                "found:";
-            for (const auto& column : DB.notFoundColumns) {
+            for (const auto& column : notFoundColumn) {
                  msgString += "\n - " + column;
             }
             msgBox.setDetailedText(QString::fromStdString(msgString));
             msgBox.open();
         }
-        if (DB.invalidRows.size() > 0) {
+        vector<string> invalidRow = DB.invalidRows();
+        if (invalidRow.size() > 0) {
             analytics->hitEvent("Load Compound DB", "Row Error");
 
             QMessageBox msgBox;
@@ -1971,7 +1965,7 @@ void MainWindow::_notifyIfBadCompoundsDB(QString filename,
             string msgString = "The following compounds had insufficient "
                                "information for peak detection, and were not "
                                "loaded:";
-            for (auto compoundID : DB.invalidRows) {
+            for (auto compoundID : invalidRow) {
                 msgString += "\n - " + compoundID;
             }
             msgBox.setDetailedText(QString::fromStdString(msgString));
@@ -3362,7 +3356,7 @@ void MainWindow::showSRMList() {
 
 		bool associateCompoundNames = true;
 
-        deque<Compound*> compoundsDB = DB.getCompoundsDB();
+        deque<Compound*> compoundsDB = DB.compoundsDB;
 
 		double amuQ1 = getSettings()->value("amuQ1").toDouble();
         double amuQ3 = getSettings()->value("amuQ3").toDouble();

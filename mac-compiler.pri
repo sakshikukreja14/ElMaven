@@ -4,3 +4,6 @@ macx {
     QMAKE_CC = $$system( which clang)
     QMAKE_CXX = $$system( which clang++)
 }
+
+DISTFILES += \
+    $$PWD/tests/doctest/adducts.csv
