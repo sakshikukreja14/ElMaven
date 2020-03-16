@@ -399,7 +399,7 @@ void PeakGroup::computeAvgBlankArea(const vector<EIC*>& eics) {
     float sum=0; int len=0;
     for(unsigned int i=0; i < eics.size(); i++ ) {
         EIC* eic = eics[i];
-        if(eic->sample != NULL && eic->sample->isBlank == false) continue;
+        if(eic->getSample() != NULL && eic->getSample()->isBlank == false) continue;
         for(unsigned int pos=0; pos < eic->intensity.size(); pos++ ) {
             if ( eic->rt[pos] >= rtmin && eic->rt[pos] <= rtmax
                     && eic->intensity[pos] > 0) {

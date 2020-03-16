@@ -94,7 +94,7 @@ Peak::Peak(EIC* e, int p) {
     gaussFitSigma=10;
     gaussFitR2=FLT_MAX;
     peakRank=INT_MAX;
-    if (sample == NULL && eic != NULL ) sample = eic->sample;
+    if (sample == NULL && eic != NULL ) sample = eic->getSample();
 }
 
 

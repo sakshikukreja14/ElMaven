@@ -1119,12 +1119,12 @@ EIC* mzSample::getEIC(float precursorMz,
                       float amuQ3 = 0.5)
 {
     EIC* e = new EIC();
-    e->sampleName = sampleName;
-    e->sample = this;
-    e->totalIntensity = 0;
-    e->maxIntensity = 0;
-    e->mzmin = 0;
-    e->mzmax = 0;
+    e->setSampleName (sampleName);
+    e->setSample (this);
+    e->setTotalIntensity (0);
+    e->setMaxIntensity (0);
+    e->setMzmin (0);
+    e->setMzmax (0);
 
     for (unsigned int i = 0; i < scans.size(); i++) {
         Scan* scan = scans[i];
@@ -1204,17 +1204,17 @@ EIC* mzSample::getEIC(float precursorMz,
             e->intensity.push_back(eicIntensity);
             e->mz.push_back(eicMz);
         }
-        e->totalIntensity += eicIntensity;
-        if (eicIntensity > e->maxIntensity) {
-            e->maxIntensity = eicIntensity;
-            e->rtAtMaxIntensity = scan->rt;
-            e->mzAtMaxIntensity = eicMz;
+        e->setTotalIntensity( e->totalIntensity() + eicIntensity);
+        if (eicIntensity > e->maxIntensity()) {
+            e->setMaxIntensity (eicIntensity);
+            e->setRtAtMaxIntensity (scan->rt);
+            e->setMzAtMaxIntensity (eicMz);
         }
     }
 
     if (e->rt.size() > 0) {
-        e->rtmin = e->rt[0];
-        e->rtmax = e->rt[e->size() - 1];
+        e->setRtmin (e->rt[0]);
+        e->setRtmax (e->rt[e->size() - 1]);
     }
 
     float scale = getNormalizationConstant();
@@ -1234,12 +1234,12 @@ EIC* mzSample::getEIC(float precursorMz,
 EIC* mzSample::getEIC(string srm, int eicType)
 {
     EIC* e = new EIC();
-    e->sampleName = sampleName;
-    e->sample = this;
-    e->totalIntensity = 0;
-    e->maxIntensity = 0;
-    e->mzmin = 0;
-    e->mzmax = 0;
+    e->setSampleName(sampleName);
+    e->setSample (this);
+    e->setTotalIntensity (0);
+    e->setMaxIntensity (0);
+    e->setMzmin (0);
+    e->setMzmax (0);
 
     // if (srmScans.size() == 0 )
 
@@ -1298,19 +1298,19 @@ EIC* mzSample::getEIC(string srm, int eicType)
             e->rt.push_back(scan->rt);
             e->intensity.push_back(eicIntensity);
             e->mz.push_back(eicMz);
-            e->totalIntensity += eicIntensity;
+            e->setTotalIntensity(e->totalIntensity() + eicIntensity);
 
-            if (eicIntensity > e->maxIntensity) {
-                e->maxIntensity = eicIntensity;
-                e->rtAtMaxIntensity = scan->rt;
-                e->mzAtMaxIntensity = eicMz;
+            if (eicIntensity > e->maxIntensity()) {
+                e->setMaxIntensity (eicIntensity);
+                e->setRtAtMaxIntensity (scan->rt);
+                e->setMzAtMaxIntensity (eicMz);
             }
         }
     }
 
     if (e->rt.size() > 0) {
-        e->rtmin = e->rt[0];
-        e->rtmax = e->rt[e->size() - 1];
+        e->setRtmin (e->rt[0]);
+        e->setRtmax (e->rt[e->size() - 1]);
     }
 
     float scale = getNormalizationConstant();
@@ -1355,12 +1355,12 @@ EIC* mzSample::getEIC(float mzmin,
         mzmax = this->maxMz;
 
     EIC* e = new EIC();
-    e->sampleName = sampleName;
-    e->sample = this;
-    e->mzmin = mzmin;
-    e->mzmax = mzmax;
-    e->totalIntensity = 0;
-    e->maxIntensity = 0;
+    e->setSampleName (sampleName);
+    e->setSample (this);
+    e->setMzmin (mzmin);
+    e->setMzmax (mzmax);
+    e->setTotalIntensity (0);
+    e->setMaxIntensity (0);
 
     int scanCount = scans.size();
     if (scanCount == 0)
@@ -1405,12 +1405,12 @@ EIC* mzSample::getTIC(float rtmin, float rtmax, int mslevel)
     // rtmin << " " << rtmax << endl;
 
     EIC* e = new EIC();
-    e->sampleName = sampleName;
-    e->sample = this;
-    e->mzmin = 0;
-    e->mzmax = 0;
-    e->totalIntensity = 0;
-    e->maxIntensity = 0;
+    e->setSampleName (sampleName);
+    e->setSample (this);
+    e->setMzmin (0);
+    e->setMzmax (0);
+    e->setTotalIntensity (0);
+    e->setMaxIntensity (0);
 
     int scanCount = scans.size();
     if (scanCount == 0)
@@ -1424,17 +1424,17 @@ EIC* mzSample::getTIC(float rtmin, float rtmax, int mslevel)
             e->scannum.push_back(i);
             e->rt.push_back(scan->rt);
             e->intensity.push_back(y);
-            e->totalIntensity += y;
-            if (y > e->maxIntensity) {
-                e->maxIntensity = y;
-                e->rtAtMaxIntensity = scan->rt;
-                e->mzAtMaxIntensity = 0;
+            e->setTotalIntensity(e->totalIntensity() + y);
+            if (y > e->maxIntensity()) {
+                e->setMaxIntensity (y);
+                e->setRtAtMaxIntensity (scan->rt);
+                e->setMzAtMaxIntensity (0);
             }
         }
     }
     if (e->rt.size() > 0) {
-        e->rtmin = e->rt[0];
-        e->rtmax = e->rt[e->size() - 1];
+        e->setRtmin (e->rt[0]);
+        e->setRtmax (e->rt[e->size() - 1]);
     }
     return (e);
 }
@@ -1452,12 +1452,12 @@ EIC* mzSample::getBIC(float rtmin, float rtmax, int mslevel)
     // rtmin << " " << rtmax << endl;
 
     EIC* e = new EIC();
-    e->sampleName = sampleName;
-    e->sample = this;
-    e->mzmin = 0;
-    e->mzmax = 0;
-    e->totalIntensity = 0;
-    e->maxIntensity = 0;
+    e->setSampleName (sampleName);
+    e->setSample (this);
+    e->setMzmin (0);
+    e->setMzmax (0);
+    e->setTotalIntensity (0);
+    e->setMaxIntensity (0);
 
     int scanCount = scans.size();
     if (scanCount == 0)
@@ -1478,17 +1478,17 @@ EIC* mzSample::getBIC(float rtmin, float rtmax, int mslevel)
             e->scannum.push_back(i);
             e->rt.push_back(scan->rt);
             e->intensity.push_back(maxIntensity);
-            e->totalIntensity += maxIntensity;
-            if (maxIntensity > e->maxIntensity) {
-                e->maxIntensity = maxIntensity;
-                e->rtAtMaxIntensity = scan->rt;
-                e->mzAtMaxIntensity = maxMz;
+            e->setTotalIntensity(e->totalIntensity() + maxIntensity);
+            if (maxIntensity > e->maxIntensity()) {
+                e->setMaxIntensity (maxIntensity);
+                e->setRtAtMaxIntensity (scan->rt);
+                e->setMzAtMaxIntensity (maxMz);
             }
         }
     }
     if (e->rt.size() > 0) {
-        e->rtmin = e->rt[0];
-        e->rtmax = e->rt[e->size() - 1];
+        e->setRtmin (e->rt[0]);
+        e->setRtmax (e->rt[e->size() - 1]);
     }
     return (e);
 }

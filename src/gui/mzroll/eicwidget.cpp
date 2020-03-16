@@ -465,8 +465,8 @@ void EicWidget::findPlotBounds() {
 		}
 	}
 	float mx=0;
-	for(int i=0;i<eicParameters->eics.size();++i)
-			mx=max(mx,eicParameters->eics[i]->maxIntensity);
+        for(int i=0;i<eicParameters->eics.size();++i)
+            mx=max(mx,eicParameters->eics[i]->maxIntensity());
 	if(_maxY==0) _maxY=mx;
 	//if(_minY <= 0) _minY = 0;
 	_maxY = (_maxY * 1.3) + 1;
@@ -597,9 +597,9 @@ void EicWidget::addEICLines(bool showSpline,
         EIC* eic = eicParameters->eics[i];
         if (eic->size() == 0)
             continue;
-        if (eic->sample != NULL && eic->sample->isSelected == false)
+        if (eic->getSample() != NULL && eic->getSample()->isSelected == false)
             continue;
-        if (eic->maxIntensity <= 0)
+        if (eic->maxIntensity() <= 0)
             continue;
 
         EicLine* lineEic = new EicLine(0, scene());
@@ -763,8 +763,8 @@ void EicWidget::addCubicSpline() {
     for( unsigned int i=0; i< eicParameters->eics.size(); i++ ) {
         EIC* eic = eicParameters->eics[i];
         if (eic->size()==0) continue;
-        if (eic->sample != NULL && eic->sample->isSelected == false) continue;
-        if (eic->maxIntensity <= 0) continue;
+        if (eic->getSample() != NULL && eic->getSample()->isSelected == false) continue;
+        if (eic->maxIntensity() <= 0) continue;
         EicLine* line = new EicLine(0,scene());
 
         //sample stacking..
@@ -864,13 +864,13 @@ void EicWidget::addTicLine() {
 	for (unsigned int i = 0; i < eicParameters->tics.size(); i++) {
 		EIC* tic = eicParameters->tics[i];
 		if (tic->size() == 0)
-			continue;
-		if (tic->sample != NULL && tic->sample->isSelected == false)
+                        continue;
+                if (tic->getSample() != NULL && tic->getSample()->isSelected == false)
 			continue;
 		EicLine* line = new EicLine(0, scene());
 		line->setEIC(tic);
 
-		_maxY = tic->maxIntensity;
+                _maxY = tic->maxIntensity();
 		_minY = 0;
 
 		for (int j = 0; j < tic->size(); j++) {
@@ -881,7 +881,7 @@ void EicWidget::addTicLine() {
 			line->addPoint(QPointF(toX(tic->rt[j]), toY(tic->intensity[j])));
 		}
 
-		mzSample* s = tic->sample;
+                mzSample* s = tic->getSample();
 		QColor color = QColor::fromRgbF(s->color[0], s->color[1], s->color[2],
 				s->color[3]);
 		line->setColor(color);
@@ -1031,12 +1031,12 @@ void EicWidget::setupColors() {
 	for (unsigned int i = 0; i < eicParameters->eics.size(); i++) {
 		EIC* eic = eicParameters->eics[i];
 		if (eic == NULL)
-			continue;
-		if (eic->sample != NULL) {
-			eic->color[0] = eic->sample->color[0];
-			eic->color[1] = eic->sample->color[1];
-			eic->color[2] = eic->sample->color[2];
-			eic->color[3] = eic->sample->color[3];
+                        continue;
+                if (eic->getSample() != NULL) {
+                    eic->color[0] = eic->getSample()->color[0];
+                    eic->color[1] = eic->getSample()->color[1];
+                    eic->color[2] = eic->getSample()->color[2];
+                    eic->color[3] = eic->getSample()->color[3];
 		} else {
 			eic->color[0] = 0.6;
 			eic->color[1] = 0.1;

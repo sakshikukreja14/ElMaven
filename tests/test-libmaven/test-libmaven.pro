@@ -47,9 +47,11 @@ macx {
 # Input
 HEADERS += \
     $$top_srcdir/src/core/libmaven/jsonReports.h        \
-    $$top_srcdir/src/core/libmaven/csvreports.h         
+    $$top_srcdir/src/core/libmaven/csvreports.h         \
+    $$top_srcdir/src/core/libmaven/EIC.h
  
 SOURCES += \
     main.cpp \
     $$top_srcdir/src/core/libmaven/jsonReports.cpp      \
-    $$top_srcdir/src/core/libmaven/csvreports.cpp       
+    $$top_srcdir/src/core/libmaven/csvreports.cpp       \
+    $$top_srcdir/src/core/libmaven/EIC.cpp

@@ -47,19 +47,19 @@ void TestEIC::testgetEICms2() {
     e = mzsample->getEIC(195,0,70,0,"",0.5,0.5); //precursorMz,collisionEnergy,productMz,eicType,filterline,amuQ1,amuQ3
     QVERIFY(e->rt.size() == 305);
     QVERIFY(e->scannum[e->scannum.size()-1] == 3351);
-    QVERIFY(e->maxIntensity == 20200);
+    QVERIFY(e->maxIntensity() == 20200);
 
     EIC* e2 = NULL;
     e2 = mzsample_2->getEIC(195,0,69,1,"",0.5,0.5);
     QVERIFY(e2->rt.size() == 305);
     QVERIFY(e2->scannum[e2->scannum.size()-1] == 3041);
-    QVERIFY(e2->maxIntensity == 10600);
+    QVERIFY(e2->maxIntensity() == 10600);
 
     EIC* e3 = NULL;
     e3 = mzsample_2->getEIC(195,0,69,1,"",2,2);
     QVERIFY(e3->rt.size() == 305);
     QVERIFY(e3->scannum[e3->scannum.size()-1] == 3040);
-    QVERIFY(e3->maxIntensity == 49400);
+    QVERIFY(e3->maxIntensity() == 49400);
 }
 
 void TestEIC::testcomputeSpline()
@@ -214,7 +214,7 @@ void TestEIC::testfindPeakBounds()
     e->setBaselineDropTopX(80);
 
     e->computeSpline(10);
-    e->findPeaks();
+//    e->findPeaks();
     e->computeBaseline();
     e->findPeakBounds(e->peaks[10]);
 
@@ -245,7 +245,7 @@ void TestEIC:: testGetPeakDetails()
     e->setBaselineDropTopX(80);
 
     e->computeSpline(10);
-    e->findPeaks();
+//    e->findPeaks();
     e->computeBaseline();
     e->findPeakBounds(e->peaks[10]);
     e->getPeakDetails(e->peaks[10]);
@@ -279,7 +279,7 @@ void TestEIC:: testGetPeakDetails()
 
     QVERIFY(TestUtils::floatCompare(peakAreaCorrected, e->peaks[10].peakAreaCorrected));
 
-    QVERIFY(TestUtils::floatCompare(peakAreaCorrected / (e->totalIntensity + 1), e->peaks[10].peakAreaFractional));
+    QVERIFY(TestUtils::floatCompare(peakAreaCorrected / (e->totalIntensity() + 1), e->peaks[10].peakAreaFractional));
     
     QVERIFY(e->peaks[10].gaussFitSigma > 0);
     
@@ -401,7 +401,7 @@ void TestEIC:: testeicMerge() {
     QVERIFY(maxEICsize == m->rt.size());
     QVERIFY(maxEICsize == m->scannum.size());
     QVERIFY(maxEICsize == m->mz.size());
-    QVERIFY(13.041 < m->rtmin < 13.042);
-    QVERIFY(17.039 < m->rtmax < 17.040);
+    QVERIFY(13.041 < m->rtmin() < 13.042);
+    QVERIFY(17.039 < m->rtmax() < 17.040);
 }
 

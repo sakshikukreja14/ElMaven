@@ -367,22 +367,22 @@ void PeakDetector::processSlices(vector<mzSlice*> &slices, string setName)
             switch (static_cast<PeakGroup::QType>(mavenParameters->peakQuantitation))
             {
             case PeakGroup::AreaTop:
-                max = eic->maxAreaTopIntensity;
+                max = eic->maxAreaTopIntensity();
                 break;
             case PeakGroup::Area:
-                max = eic->maxAreaIntensity;
+                max = eic->maxAreaIntensity();
                 break;
             case PeakGroup::Height:
-                max = eic->maxIntensity;
+                max = eic->maxIntensity();
                 break;
             case PeakGroup::AreaNotCorrected:
-                max = eic->maxAreaNotCorrectedIntensity;
+                max = eic->maxAreaNotCorrectedIntensity();
                 break;
             case PeakGroup::AreaTopNotCorrected:
-                max = eic->maxAreaTopNotCorrectedIntensity;
+                max = eic->maxAreaTopNotCorrectedIntensity();
                 break;
             default:
-                max = eic->maxIntensity;
+                max = eic->maxIntensity();
                 break;
             }
 

@@ -213,7 +213,9 @@ void GalleryWidget::addIdividualEicPlots(std::vector<EIC*>&eics, PeakGroup*group
     for (unsigned int i=0; i < eics.size();  i++ ) {
         EIC* eic = eics[i];
         if(!eic) continue;
-        QColor color = QColor::fromRgbF( eic->sample->color[0], eic->sample->color[1], eic->sample->color[2], 1.0 );
+        QColor color = QColor::fromRgbF( eic->getSample()->color[0],
+                                        eic->getSample()->color[1],
+                                        eic->getSample()->color[2], 1.0 );
 
         mzSlice& slice =  mainwindow->getEicWidget()->getParameters()->getMzSlice();
 
@@ -224,9 +226,9 @@ void GalleryWidget::addIdividualEicPlots(std::vector<EIC*>&eics, PeakGroup*group
         plot->addDataColor(color);
         plot->setData(0,QVariant::fromValue(slice));
         plot->setTitle(tr("%1 mz: %1-%2")
-                       .arg(eic->sample->sampleName.c_str())
-                       .arg(eic->mzmin)
-                       .arg(eic->mzmax));
+                           .arg(eic->getSample()->sampleName.c_str())
+                           .arg(eic->mzmin())
+                           .arg(eic->mzmax()));
         if(group) {
             for(int j=0; j < group->peakCount(); j++ ) {
                 if(group->peaks[j].getSample() ==  eic->getSample() ) {
@@ -282,13 +284,13 @@ TinyPlot* GalleryWidget::addEicPlot(std::vector<EIC*>& eics) {
 	int insertCount=0;
 	for(int i=0; i < eics.size(); i++ ) {
 		EIC* eic = eics[i];
-		if(!eic) continue;
-		if (eic->maxIntensity == 0 ) continue;
-        QColor color = QColor::fromRgbF( eic->sample->color[0], eic->sample->color[1], eic->sample->color[2], 1.0 );
+                if(!eic) continue;
+                if (eic->maxIntensity() == 0 ) continue;
+                QColor color = QColor::fromRgbF( eic->getSample()->color[0], eic->getSample()->color[1], eic->getSample()->color[2], 1.0 );
 
 		plot->addData(eic);
-		plot->addDataColor(color);
-		plot->setTitle(tr("mz: %1-%2").arg(eics[i]->mzmin).arg(eics[i]->mzmax));
+                plot->addDataColor(color);
+                plot->setTitle(tr("mz: %1-%2").arg(eics[i]->mzmin()).arg(eics[i]->mzmax()));
 
 		insertCount++;
 	}

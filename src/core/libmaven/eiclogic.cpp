@@ -132,17 +132,17 @@ mzSlice EICLogic::visibleEICBounds() {
 	mzSlice bounds(0, 0, 0, 0);
 
 	for (unsigned int i = 0; i < eics.size(); i++) {
-		EIC* eic = eics[i];
-		if (i == 0 || eic->rtmin < bounds.rtmin)
-			bounds.rtmin = eic->rtmin;
-		if (i == 0 || eic->rtmax > bounds.rtmax)
-			bounds.rtmax = eic->rtmax;
-		if (i == 0 || eic->mzmin < bounds.mzmin)
-			bounds.mzmin = eic->mzmin;
-		if (i == 0 || eic->mzmax > bounds.mzmax)
-			bounds.mzmax = eic->mzmax;
-		if (i == 0 || eic->maxIntensity > bounds.ionCount)
-			bounds.ionCount = eic->maxIntensity;
+                EIC* eic = eics[i];
+                if (i == 0 || eic->rtmin() < bounds.rtmin)
+                    bounds.rtmin = eic->rtmin();
+                if (i == 0 || eic->rtmax() > bounds.rtmax)
+                    bounds.rtmax = eic->rtmax();
+                if (i == 0 || eic->mzmin() < bounds.mzmin)
+                    bounds.mzmin = eic->mzmin();
+                if (i == 0 || eic->mzmax() > bounds.mzmax)
+                    bounds.mzmax = eic->mzmax();
+                if (i == 0 || eic->maxIntensity() > bounds.ionCount)
+                    bounds.ionCount = eic->maxIntensity();
 	}
 	return bounds;
 	//} Feng note: move this bracket to above "return bounds" fixes a maximum retention time bug.

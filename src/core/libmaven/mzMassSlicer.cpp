@@ -544,12 +544,12 @@ pair<bool, bool> MassSlices::_compareSlices(vector<mzSample*>& samples,
                                                 1,
                                                 1,
                                                 "");
-            eicValues.push_back({eic->maxIntensity,
-                                 eic->rtAtMaxIntensity,
-                                 eic->mzAtMaxIntensity});
-            comparisonEicValues.push_back({comparisonEic->maxIntensity,
-                                           comparisonEic->rtAtMaxIntensity,
-                                           comparisonEic->mzAtMaxIntensity});
+            eicValues.push_back({eic->maxIntensity(),
+                                 eic->rtAtMaxIntensity(),
+                                 eic->mzAtMaxIntensity()});
+            comparisonEicValues.push_back({comparisonEic->maxIntensity(),
+                                           comparisonEic->rtAtMaxIntensity(),
+                                           comparisonEic->mzAtMaxIntensity()});
             delete eic;
             delete comparisonEic;
         }
