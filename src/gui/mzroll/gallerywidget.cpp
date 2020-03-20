@@ -1,5 +1,5 @@
 #include "Compound.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "EIC.h"
 #include "gallerywidget.h"

@@ -2,7 +2,7 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "isotopeplot.h"
 #include "isotopeplotdockwidget.h"

@@ -1,7 +1,7 @@
 #include "background_peaks_update.h"
 #include "Compound.h"
 #include "datastructures/mzSlice.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "globals.h"
 #include "isotopeDetection.h"

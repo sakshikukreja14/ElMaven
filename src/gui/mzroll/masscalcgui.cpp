@@ -1,6 +1,6 @@
 #include "Compound.h"
 #include "eicwidget.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "globals.h"
 #include "mainwindow.h"
 #include "masscalcgui.h"

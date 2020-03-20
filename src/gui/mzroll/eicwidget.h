@@ -6,7 +6,7 @@
 #include "stable.h"
 
 class EIC;
-class EICLogic;
+class EICParameters;
 class EicLine;
 class EicPoint;
 class Note;
@@ -28,7 +28,7 @@ public:
 	EicWidget(QWidget *p);
 	~EicWidget();
 
-	EICLogic* getParameters() {
+        EICParameters* getParameters() {
 		return eicParameters;
 	}
 	QString eicToTextBuffer(); //TODO: Sahil Added while merging eicwidget
@@ -36,7 +36,7 @@ public:
 	void setBarplotPosition(PeakGroup* group);
 
 public Q_SLOTS:
-	void setMzSlice(float mz1, float mz2 = 0.0);
+        void setMzSlice(float mz1, float mz2 = 0.0);
 	void setMassCutoff(MassCutoff *massCutoff);
 	void resetZoom();
 	void zoom(float factor);
@@ -202,7 +202,7 @@ Q_SIGNALS:
     void compoundSet(Compound*);
 
 private:
-	EICLogic* eicParameters;
+        EICParameters* eicParameters;
 	float _focusLineRt;					// 0
 
 	float _minX;						//plot bounds

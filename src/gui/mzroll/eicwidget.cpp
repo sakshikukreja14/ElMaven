@@ -8,7 +8,7 @@
 #include "boxplot.h"
 #include "classifierNeuralNet.h"
 #include "datastructures/mzSlice.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "gallerywidget.h"
 #include "globals.h"
 #include "isotopeswidget.h"
@@ -27,10 +27,11 @@
 #include "settingsform.h"
 #include "spectrawidget.h"
 #include "treedockwidget.h"
+#include "PeakDetector.h"
 
 EicWidget::EicWidget(QWidget *p) {
 
-	eicParameters = new EICLogic();
+        eicParameters = new EICParameters();
 	parent = p;
 
 	//default values
@@ -384,17 +385,19 @@ void EicWidget::cleanup() {
 
 void EicWidget::computeEICs() {
 
-	//CAN BE REPLACED BY PULLING SETTINGS FROM mavenParameters.	
+        //CAN BE REPLACED BY PULLING SETTINGS FROM mavenParameters.	ma
 	vector<mzSample*> samples = getMainWindow()->getVisibleSamples();
 	if (samples.size() == 0)
 		return;
 
 	QSettings *settings = getMainWindow()->getSettings();
     mzSlice bounds = visibleSamplesBounds();
-
-    eicParameters->getEIC(bounds,
-                          samples,
-                          getMainWindow()->mavenParameters);
+    mzSlice slice = eicParameters->_slice;
+    slice.rtmin = bounds.rtmin;
+    slice.rtmax = bounds.rtmax;
+    eicParameters->eics = PeakDetector::pullEICs(&slice,
+                                                samples,
+                                                 getMainWindow()->mavenParameters);
 
     // score peak quality
     ClassifierNeuralNet* clsf = getMainWindow()->getClassifier();
@@ -1772,18 +1775,21 @@ void EicWidget::groupPeaks() {
     int eic_smoothingWindow = getMainWindow()->mavenParameters->eic_smoothingWindow;
     float grouping_maxRtWindow = getMainWindow()->mavenParameters->grouping_maxRtWindow;
 
-    eicParameters->groupPeaks(eic_smoothingWindow,
-                              &(eicParameters->_slice),
-                              grouping_maxRtWindow,
-                              getMainWindow()->mavenParameters->minQuality,
-                              getMainWindow()->mavenParameters->distXWeight,
-                              getMainWindow()->mavenParameters->distYWeight,
-                              getMainWindow()->mavenParameters->overlapWeight,
-                              getMainWindow()->mavenParameters->useOverlap,
-                              getMainWindow()->mavenParameters->minSignalBaselineDifference,
-                              getMainWindow()->mavenParameters->fragmentTolerance,
-                              getMainWindow()->mavenParameters->scoringAlgo);
-
+    vector<PeakGroup> peakgroups = EIC::groupPeaks(
+                                 eicParameters->eics,
+                                 &(eicParameters->_slice),
+                                 eic_smoothingWindow,
+                                 grouping_maxRtWindow,
+                                 getMainWindow()->mavenParameters->minQuality,
+                                 getMainWindow()->mavenParameters->distXWeight,
+                                 getMainWindow()->mavenParameters->distYWeight,
+                                 getMainWindow()->mavenParameters->overlapWeight,
+                                 getMainWindow()->mavenParameters->useOverlap,
+                                 getMainWindow()->mavenParameters->minSignalBaselineDifference,
+                                 getMainWindow()->mavenParameters->fragmentTolerance,
+                                 getMainWindow()->mavenParameters->scoringAlgo);
+    EIC::removeLowRankGroups(peakgroups, 50);
+    eicParameters->peakgroups = peakgroups;
 }
 
 void EicWidget::print(QPaintDevice* printer) {

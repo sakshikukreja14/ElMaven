@@ -94,7 +94,6 @@ SOURCES = base64.cpp \
           csvreports.cpp \
           comparesampleslogic.cpp \
           isotopelogic.cpp \
-          eiclogic.cpp \
           databases.cpp \
           Peptide.cpp \
           PolyAligner.cpp \
@@ -109,7 +108,8 @@ SOURCES = base64.cpp \
           groupFeatures.cpp \
           svmPredictor.cpp \
           zlib.cpp \
-          adductdetection.cpp
+          adductdetection.cpp   \
+          datastructures/eicparameters.cpp
 
 HEADERS += constants.h \
            base64.h \
@@ -136,7 +136,6 @@ HEADERS += constants.h \
            csvreports.h \
            comparesampleslogic.h \
            isotopelogic.h \
-           eiclogic.h \
            EIC.h \
 	       Scan.h \
            SRMList.h \
@@ -155,4 +154,5 @@ HEADERS += constants.h \
            groupClassifier.h \
            groupFeatures.h \
            svmPredictor.h \
-           adductdetection.h
+           adductdetection.h    \
+           datastructures/eicparameters.h

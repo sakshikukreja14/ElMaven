@@ -1,5 +1,5 @@
 #include "common/analytics.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "isotopeswidget.h"
 #include "ligandwidget.h"

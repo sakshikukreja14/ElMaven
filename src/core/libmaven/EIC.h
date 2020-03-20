@@ -18,6 +18,7 @@ class mzPoint;
 class Scan;
 class Compound;
 class mzSlice;
+class EICParameters;
 
 using namespace std;
 

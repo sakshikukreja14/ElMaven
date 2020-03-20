@@ -7,7 +7,7 @@
 #include "PeakGroup.h"
 
 class Compound;
-class EICLogic;
+class EICParameters;
 class MainWindow;
 class mzLink;
 class mzSample;
@@ -83,7 +83,7 @@ public:
 
 
         private:
-                    EICLogic* eicparameters;
+                    EICParameters* eicparameters;
                     MainWindow* mainwindow;
                     Scan* _currentScan;
                     PeakGroup _currentGroup;

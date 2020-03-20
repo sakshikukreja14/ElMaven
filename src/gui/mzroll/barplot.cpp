@@ -1,5 +1,5 @@
 #include "barplot.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "mainwindow.h"
 #include "mzSample.h"

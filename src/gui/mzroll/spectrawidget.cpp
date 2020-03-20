@@ -2,7 +2,7 @@
 #include "line.h"
 #include "Compound.h"
 #include "constants.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "Fragment.h"
 #include "mainwindow.h"
@@ -17,7 +17,7 @@
 
 SpectraWidget::SpectraWidget(MainWindow* mw, bool isFragSpectra) {
     this->mainwindow = mw;
-    eicparameters = new EICLogic();
+    eicparameters = new EICParameters();
    _currentScan = nullptr;
    _avgScan = nullptr;
    _currentGroup = PeakGroup();

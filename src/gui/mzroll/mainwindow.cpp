@@ -16,7 +16,7 @@
 #include "controller.h"
 #include "classifierNeuralNet.h"
 #include "datastructures/adduct.h"
-#include "eiclogic.h"
+#include "eicparameters.h"
 #include "eicwidget.h"
 #include "gallerywidget.h"
 #include "globals.h"
@@ -66,7 +66,6 @@
 #include "treemap.h"
 #include "updatedialog.h"
 #include "videoplayer.h"
-#include "eiclogic.h"
 
 #ifdef WIN32
 #include <windows.h>
