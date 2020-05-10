@@ -116,7 +116,7 @@ void GalleryWidget::addEicPlots(std::vector<Compound*>&compounds) {
 		slice.compound = c;
 		slice.rtmin = 0;
 		slice.rtmax = 1e9;
-		if (!c->srmId.empty()) slice.srmId=c->srmId;
+                if (!c->srmId().empty()) slice.srmId=c->srmId();
 
         if (!c->formula().empty()) {
             int charge = mainwindow->mavenParameters->getCharge(c);
@@ -132,7 +132,7 @@ void GalleryWidget::addEicPlots(std::vector<Compound*>&compounds) {
 		}
     */
 		TinyPlot* plot = addEicPlot(slice);
-		if(plot) plot->setTitle(QString(c->name.c_str()));
+                if(plot) plot->setTitle(QString(c->name().c_str()));
 		if(plot) plot->setData(0, QVariant::fromValue(c));
 	}
 	if (plotitems.size() > 0) replot();
@@ -161,7 +161,7 @@ void GalleryWidget::addEicPlots(std::vector<PeakGroup*>&groups) {
 
    		mzSlice slice(minmz,maxmz,rtmin,rtmax);
 		if(c) slice.compound = c;
-		if(c && !c->srmId.empty()) slice.srmId=c->srmId;
+                if(c && !c->srmId().empty()) slice.srmId=c->srmId();
 
 		TinyPlot* plot = addEicPlot(slice);
 		if ( plot ) {
@@ -329,56 +329,60 @@ void GalleryWidget::wheelEvent(QWheelEvent *event) {
 		}
 }
 
-void GalleryWidget::drawMap() {
-
-
-    //gallery widget is too small
+void GalleryWidget::drawMap()
+{
+    // gallery widget is too small
     if (width() < 50 or height() < 50) {
         return;
     }
 
-    int nItems= plotitems.size();
-	if (nItems == 0 ) return;
+    int nItems = plotitems.size();
+    if (nItems == 0)
+        return;
 
-    _boxW =width()-30;
-    if  (_boxH < 50 ) _boxH = 50;
-    if  (_boxH > height()) { _boxH=height(); }
+    _boxW = width() - 30;
+    if (_boxH < 50)
+        _boxH = 50;
+    if (_boxH > height()) {
+        _boxH = height();
+    }
 
     //_rowSpacer = _boxH/5;
-    //if  (_rowSpacer < 1) _rowSpacer=1;
-    //if  (_colSpacer < 1) _colSpacer=1;
+    // if  (_rowSpacer < 1) _rowSpacer=1;
+    // if  (_colSpacer < 1) _colSpacer=1;
 
-    //int nItemPerRow=width()/(_boxW+_colSpacer);
-    //if  (nItemPerRow < 1 ) nItemPerRow=1;
-    int nItemPerRow=1;
-	int nRows = ceil(nItems/nItemPerRow);
-	if (nRows < 1) nRows=1;
+    // int nItemPerRow=width()/(_boxW+_colSpacer);
+    // if  (nItemPerRow < 1 ) nItemPerRow=1;
+    int nItemPerRow = 1;
+    int nRows = ceil(nItems / nItemPerRow);
+    if (nRows < 1)
+        nRows = 1;
 
-    int sceneW=width()-30;
-	int sceneH= nRows*(_boxH+_rowSpacer)+_boxH+100;
-	setSceneRect(0,0, sceneW, sceneH);
+    int sceneW = width() - 30;
+    int sceneH = nRows * (_boxH + _rowSpacer) + _boxH + 100;
+    setSceneRect(0, 0, sceneW, sceneH);
 
     /*
-	cerr << "GalleryWidget::drawMap() " << nItemPerRow << " " << _boxW+_rowSpacer << endl;
-	cerr << "GalleryWidget::drawMap() width()=" << sceneW << endl;
-	cerr << "GalleryWidget::drawMap() nItems=" << nItems << endl;
-	cerr << "GalleryWidget::drawMap() nItemPerRow=" <<  nItemPerRow << endl;
-	cerr << "GalleryWidget::drawMap() nRows=" <<  nRows << endl;
+        cerr << "GalleryWidget::drawMap() " << nItemPerRow << " " <<
+       _boxW+_rowSpacer << endl; cerr << "GalleryWidget::drawMap() width()=" <<
+       sceneW << endl; cerr << "GalleryWidget::drawMap() nItems=" << nItems <<
+       endl; cerr << "GalleryWidget::drawMap() nItemPerRow=" <<  nItemPerRow <<
+       endl; cerr << "GalleryWidget::drawMap() nRows=" <<  nRows << endl;
 */
-    for (int i=0; i < nItems; i++ ) {
-		QGraphicsItem* item = plotitems[i];
-		int row = i % nItemPerRow;
-		int col = i / nItemPerRow;
-		int xpos = row*(_colSpacer+_boxW);
-		int ypos = col*(_rowSpacer+_boxH);
-		((TinyPlot*) item)->setWidth(_boxW);
-		((TinyPlot*) item)->setHeight(_boxH);
-		((TinyPlot*) item)->setPos(xpos, ypos);
-		//((QGraphicsRectItem*)item)->setRect(xpos,ypos,_boxW,_boxH);
-	}
+    for (int i = 0; i < nItems; i++) {
+        QGraphicsItem* item = plotitems[i];
+        int row = i % nItemPerRow;
+        int col = i / nItemPerRow;
+        int xpos = row * (_colSpacer + _boxW);
+        int ypos = col * (_rowSpacer + _boxH);
+        ((TinyPlot*)item)->setWidth(_boxW);
+        ((TinyPlot*)item)->setHeight(_boxH);
+        ((TinyPlot*)item)->setPos(xpos, ypos);
+        //((QGraphicsRectItem*)item)->setRect(xpos,ypos,_boxW,_boxH);
+    }
 
     scene()->update();
-	fitInView(0,0,sceneW,_boxH+_rowSpacer+50,Qt::KeepAspectRatio);
+    fitInView(0, 0, sceneW, _boxH + _rowSpacer + 50, Qt::KeepAspectRatio);
 }
 
 void GalleryWidget::mousePressEvent(QMouseEvent *event) {

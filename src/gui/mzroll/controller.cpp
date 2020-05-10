@@ -6,6 +6,9 @@
 #include <QGroupBox>
 #include <QSpinBox>
 
+#ifndef Q_OS_LINUX
+#include "autoupdater.h"
+#endif
 #include <common/downloadmanager.h>
 #include "controller.h"
 #include "isotopedialog.h"
@@ -19,10 +22,8 @@
 
 Controller::Controller()
 {
-
     _dlManager = new DownloadManager;
     iPolly = new PollyIntegration(_dlManager);
-
     _mw = new MainWindow(this);
     updateUi();
     connect(_mw->isotopeDialog, &IsotopeDialog::updateSettings, this, &Controller::updateIsotopeDialogSettings);
@@ -39,6 +40,21 @@ Controller::Controller()
     _mw->settingsForm->triggerSettingsUpdate();
     _mw->peakDetectionDialog->triggerSettingsUpdate();
     _mw->isotopeDialog->triggerSettingsUpdate();
+
+#ifndef Q_OS_LINUX
+    _updater = new AutoUpdater();
+    connect(_updater,
+            &AutoUpdater::updateAvailable,
+            _mw,
+            &MainWindow::promptUpdate);
+    connect(_mw,
+            &MainWindow::updateAllowed,
+            _updater,
+            &AutoUpdater::startMaintenanceTool);
+
+    qDebug() << "Checking for updates…";
+    _updater->start();
+#endif
 }
 
 Controller::~Controller()

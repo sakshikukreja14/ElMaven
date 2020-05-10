@@ -56,6 +56,7 @@ ProjectDockWidget::ProjectDockWidget(QMainWindow *parent):
     QToolBar *toolBar = new QToolBar(this);
     toolBar->setFloatable(false);
     toolBar->setMovable(false);
+    toolBar->setIconSize(QSize(24, 24));
 
     QToolButton* exportMetadataButton = new QToolButton(toolBar);
     // TODO: Replace this icon with something more appropriate
@@ -805,7 +806,7 @@ void ProjectDockWidget::savePeakGroupInSQLite(PeakGroup* group,
             && !filename.isEmpty()) {
         saveSQLiteProject(filename);
     } else {
-        auto tableName = QString::fromStdString(group->searchTableName);
+        auto tableName = QString::fromStdString(group->tableName());
         _mainwindow->fileLoader->updateGroup(group, tableName);
     }
 }

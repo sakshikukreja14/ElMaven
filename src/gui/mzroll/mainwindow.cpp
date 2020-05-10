@@ -15,10 +15,10 @@
 #include "Compound.h"
 #include "controller.h"
 #include "classifierNeuralNet.h"
+#include "datastructures/adduct.h"
 #include "eiclogic.h"
 #include "eicwidget.h"
 #include "gallerywidget.h"
-#include "gettingstarted.h"
 #include "globals.h"
 #include "groupClassifier.h"
 #include "grouprtwidget.h"
@@ -64,7 +64,9 @@
 #include "tabledockwidget.h"
 #include "treedockwidget.h"
 #include "treemap.h"
+#include "updatedialog.h"
 #include "videoplayer.h"
+#include "eiclogic.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -133,9 +135,10 @@ void MainWindow::setValue(int value)
 using namespace mzUtils;
 
  MainWindow::MainWindow(Controller* controller, QWidget *parent) :
-     _controller(controller),
-		QMainWindow(parent) {
-	connect( this, SIGNAL (reBoot()), this, SLOT (slotReboot()));
+    _controller(controller),
+    QMainWindow(parent)
+{
+    connect( this, SIGNAL (reBoot()), this, SLOT (slotReboot()));
     m_value=0;
 
 
@@ -168,7 +171,7 @@ using namespace mzUtils;
 
 	qRegisterMetaType<QTextCursor>("QTextCursor");
 
-	
+
 
 #ifdef Q_OS_MAC
 	QDir dir(QApplication::applicationDirPath());
@@ -184,16 +187,6 @@ using namespace mzUtils;
     readSettings();
 	QString dataDir = ".";
 	unloadableFiles.reserve(50);
-
-	QList<QString> dirs;
-	dirs << dataDir << QApplication::applicationDirPath()
-		 << QApplication::applicationDirPath() + "/../Resources/";
-
-	//find location of DATA
-	Q_FOREACH (QString d, dirs){
-		QFile test(d+"/ADDUCTS.csv");
-		if (test.exists()) {dataDir=d; settings->setValue("dataDir", dataDir); break;}
-	}
 
 	setWindowTitle(programName + " " + STR(EL_MAVEN_VERSION));
 
@@ -220,11 +213,6 @@ using namespace mzUtils;
 	QString commonFragments = dataDir + "/" + "FRAGMENTS.csv";
 	if (QFile::exists(commonFragments))
 		DB.loadFragments(commonFragments.toStdString());
-
-	QString commonAdducts = dataDir + "/" + "ADDUCTS.csv";
-	if (QFile::exists(commonAdducts))
-		DB.loadFragments(commonAdducts.toStdString());
-
 
 	clsf = new ClassifierNeuralNet();    //clsf = new ClassifierNaiveBayes();
 		mavenParameters = new MavenParameters(QString(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QDir::separator() + "lastRun.xml").toStdString());
@@ -325,7 +313,6 @@ using namespace mzUtils;
 	alignmentVizAllGroupsPlot = new QCustomPlot(this);	
 	pathwayWidget = new PathwayWidget(this);
 	adductWidget = new AdductWidget(this);
-	gettingstarted = new GettingStarted(this);
 	isotopeWidget = new IsotopeWidget(this);
 	isotopePlot = new IsotopePlot(this);
 
@@ -403,7 +390,6 @@ using namespace mzUtils;
 	ligandWidget->setVisible(true);
 	pathwayPanel->setVisible(false);
 	covariantsPanel->setVisible(false);
-	adductWidget->setVisible(false);
 
 	isotopeWidget->setVisible(false);
 	massCalcWidget->setVisible(false);
@@ -484,7 +470,6 @@ using namespace mzUtils;
 	addDockWidget(Qt::BottomDockWidgetArea, alignmentVizAllGroupsDockWidget, Qt::Horizontal);
 	addDockWidget(Qt::BottomDockWidgetArea, isotopePlotDockWidget, Qt::Horizontal);
 	addDockWidget(Qt::BottomDockWidgetArea, pathwayDockWidget, Qt::Horizontal);
-	addDockWidget(Qt::BottomDockWidgetArea, adductWidget, Qt::Horizontal);
 	addDockWidget(Qt::BottomDockWidgetArea, covariantsPanel, Qt::Horizontal);
 	addDockWidget(Qt::BottomDockWidgetArea, fragPanel, Qt::Horizontal);
 	addDockWidget(Qt::BottomDockWidgetArea, scatterDockWidget, Qt::Horizontal);
@@ -770,6 +755,21 @@ MainWindow::~MainWindow()
     delete _usageTracker;
 }
 
+void MainWindow::promptUpdate(QString version)
+{
+    qDebug() << "New release"
+             << QString("v%1").arg(version)
+             << "available.";
+
+    // prompt for update after 15 seconds
+    QTimer::singleShot(15000, [this] {
+        UpdateDialog prompt(this);
+        prompt.exec();
+        if (prompt.updateAllowed())
+            emit updateAllowed();
+    });
+}
+
 void MainWindow::sendPeaksGA()
 {
     if (isotopeDialog->isotopeDetectionEnabled() && peakDetectionDialog->databaseSearchEnabled()) {
@@ -975,17 +975,21 @@ void MainWindow::saveProject(bool explicitSave)
 
         // if no projects were saved or opened
         if (_latestUserProjectName.isEmpty()) {
-            QString message = "Would you like to save your data for this "
-                              "session as a project, before you quit?";
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this,
-                                          "Save as project",
-                                          message,
-                                          QMessageBox::Yes
-                                              | QMessageBox::No
-                                              | QMessageBox::Cancel,
-                                          QMessageBox::Yes);
-            if (reply == QMessageBox::Cancel) {
+            QMessageBox confirmation;
+            confirmation.setWindowTitle("Save as project");
+            confirmation.setText("Would you like to save your data for this "
+                                 "session as a project, before you quit?");
+            QPushButton* cancelButton = confirmation.addButton(tr("Cancel"),
+                                                         QMessageBox::ActionRole);
+            QPushButton* noButton = confirmation.addButton(tr("No"),
+                                                     QMessageBox::RejectRole);
+            QPushButton* yesButton = confirmation.addButton(tr("Yes"),
+                                                      QMessageBox::AcceptRole);
+            confirmation.setDefaultButton(yesButton);
+            confirmation.setEscapeButton(cancelButton);
+            confirmation.exec();
+
+            if (confirmation.clickedButton() == cancelButton) {
                 settings->setValue("closeEvent", 0);
                 return;
             }
@@ -993,7 +997,7 @@ void MainWindow::saveProject(bool explicitSave)
             // remove timestamp autosave file in any case
             fileLoader->closeSQLiteProject();
             QFile::remove(_currentProjectName);
-            if (reply == QMessageBox::No)
+            if (confirmation.clickedButton() == noButton)
                 return;
 
             _currentProjectName = "";
@@ -1006,23 +1010,35 @@ void MainWindow::saveProject(bool explicitSave)
 
             analytics->hitEvent("Project Save", "emDB");
         } else {
-            QMessageBox msgBox;
-            QString message = "Please choose the project file to save your "
-                              "progress for this session.";
-            msgBox.setText(message);
-            QPushButton* cancelButton = msgBox.addButton(tr("Cancel"),
+            QMessageBox confirmation;
+            confirmation.setText("Would you like to save changes made to this "
+                                 "session before you quit?");
+            confirmation.setWindowTitle("Save as project");
+            QPushButton* cancelButton = confirmation.addButton(tr("Cancel"),
                                                          QMessageBox::ActionRole);
-            QPushButton* newButton = msgBox.addButton(tr("Save in new"),
-                                                      QMessageBox::ActionRole);
-            QPushButton* saveButton = msgBox.addButton(tr("Save in current"),
-                                                       QMessageBox::ActionRole);
-            msgBox.setDefaultButton(saveButton);
-            msgBox.setEscapeButton(cancelButton);
-            msgBox.exec();
-            if (msgBox.clickedButton() == cancelButton) {
+            QPushButton* noButton = confirmation.addButton(tr("No"),
+                                                     QMessageBox::RejectRole);
+            QPushButton* yesButton = confirmation.addButton(tr("Yes"),
+                                                      QMessageBox::AcceptRole);
+            confirmation.setDefaultButton(yesButton);
+            confirmation.setEscapeButton(cancelButton);
+            confirmation.exec();
+            if (confirmation.clickedButton() == cancelButton) {
                 settings->setValue("closeEvent", 0);
                 return;
+            } else if (confirmation.clickedButton() == noButton) {
+                return;
             }
+
+            QMessageBox msgBox;
+            msgBox.setText("Please choose the project file to save your "
+                           "progress for this session.");
+            QPushButton* saveButton = msgBox.addButton(tr("Save in current"),
+                                                       QMessageBox::AcceptRole);
+            QPushButton* newButton = msgBox.addButton(tr("Save in new"),
+                                                      QMessageBox::AcceptRole);
+            msgBox.setDefaultButton(saveButton);
+            msgBox.exec();
 
             // remove current project file only if it was created by autosave
             if (this->timestampFileExists) {
@@ -1047,10 +1063,13 @@ void MainWindow::saveProject(bool explicitSave)
             }
         }
 
-        QMessageBox msgBox(this);
-        msgBox.setText("Please wait. Your project is being saved…");
-        msgBox.setStandardButtons(QMessageBox::NoButton);
-        msgBox.open();
+        // creating a persistent message box, which will be cleared when
+        // the application exits anyway
+        QMessageBox *msgBox = new QMessageBox(this);
+        msgBox->setText("Please wait. Your project is being saved…");
+        msgBox->setStandardButtons(QMessageBox::NoButton);
+        msgBox->open();
+
         this->autosave->saveProjectWorker();
     } else if (explicitSave) {
         _currentProjectName = _getProjectFilenameFromProjectDockWidget();
@@ -1188,16 +1207,16 @@ void MainWindow::setUrl(Compound* c) {
 			"http://www.ncbi.nlm.nih.gov/sites/entrez?db=pccompound&term=";
 
 	QString url;
-	if (c->db == "MetaCyc") {
-		url = biocycURL + tr("=%1").arg(c->id.c_str());
-	} else if (c->db == "KEGG") {
-		url = keggURL + tr("%1").arg(c->id.c_str());
+        if (c->db() == "MetaCyc") {
+                url = biocycURL + tr("=%1").arg(c->id().c_str());
+        } else if (c->db() == "KEGG") {
+                url = keggURL + tr("%1").arg(c->id().c_str());
 		//} else if ( c->id.c_str() != "") {
 		//  url = keggURL+tr("%1").arg(c->id.c_str());
 	} else {
-		url = pubChemURL + tr("%1").arg(c->name.c_str());
+                url = pubChemURL + tr("%1").arg(c->name().c_str());
 	}
-	QString link(c->name.c_str());
+        QString link(c->name().c_str());
 	setUrl(url, link);
 }
 
@@ -1227,7 +1246,7 @@ TableDockWidget* MainWindow::addPeaksTable(const QString& tableTitle) {
 
     QToolButton* btnTable = addDockWidgetButton(sideBar,
                                                 panel,
-                                                QIcon(rsrcPath + "/featuredetect.png"),
+                                                QIcon(rsrcPath + "/Peak Table.png"),
                                                 "");
 
     groupTables.push_back(panel);
@@ -1287,7 +1306,8 @@ void MainWindow::setIonizationModeLabel() {
 	
 	ionizationModeLabel->setText(ionMode);
 
-	isotopeWidget->setCharge(mode);
+    isotopeWidget->setCharge(mode);
+    ligandWidget->getAdductWidget()->selectAdductsForCurrentPolarity();
 	setTotalCharge();
 }
 
@@ -1358,14 +1378,21 @@ vector<mzSample*> MainWindow::getVisibleSamples() {
 
 PeakGroup* MainWindow::bookmarkPeakGroup()
 {
-    if (eicWidget && (eicWidget->getParameters()->displayedGroup() != NULL)) {
-       return bookmarkPeakGroup(eicWidget->getParameters()->displayedGroup());
+    if(eicWidget != nullptr && eicWidget->getParameters() != nullptr){
+        if (eicWidget->getParameters()->displayedGroup() != nullptr){
+            return bookmarkPeakGroup(eicWidget->getParameters()->displayedGroup());
+        }
+        else
+        {
+            PeakGroup* peakgroup;
+            return peakgroup;
+        }
     }
 }
 
 PeakGroup* MainWindow::bookmarkPeakGroup(PeakGroup* group)
 {
-	if ( bookmarkedPeaks == NULL ) return NULL;
+    if ( bookmarkedPeaks == NULL ) return NULL;
 	//TODO: User feedback when group is rejected
 	if (group->peakCount() == 0) return NULL;
 
@@ -1383,7 +1410,7 @@ PeakGroup* MainWindow::bookmarkPeakGroup(PeakGroup* group)
         double C = (double) mavenParameters->deltaRTWeight/10;
 
         if (mavenParameters->deltaRtCheckFlag && group->getCompound() != NULL && 
-            group->getCompound()->expectedRt > 0) {
+            group->getCompound()->expectedRt() > 0) {
             group->groupRank = pow(rtDiff, 2*C)
                                * pow((1.1 - group->maxQuality), A)
                                * (1 /( pow(log(group->maxIntensity + 1), B)));
@@ -1395,6 +1422,7 @@ PeakGroup* MainWindow::bookmarkPeakGroup(PeakGroup* group)
 		bookmarkedGroup = bookmarkedPeaks->addPeakGroup(group);
         bookmarkedPeaks->showAllGroups();
 		bookmarkedPeaks->updateTable();
+        bookmarkedPeaks->selectPeakGroup(bookmarkedGroup);
     }
     return bookmarkedGroup;
 }
@@ -1442,11 +1470,11 @@ void MainWindow::setCompoundFocus(Compound*c) {
 	// if (getIonizationMode())
 	// 	charge = getIonizationMode(); //user specified ionization mode
 	charge = mavenParameters->getCharge(c);
-	qDebug() << "setCompoundFocus:" << c->name.c_str() << " " << charge << " "
-			<< c->expectedRt;
+        qDebug() << "setCompoundFocus:" << c->name().c_str() << " " << charge << " "
+                        << c->expectedRt();
 
-    float mz = c->mass;
-    if (!c->formula().empty() || c->neutralMass != 0.0f)
+        float mz = c->mz();
+        if (!c->formula().empty() || c->neutralMass() != 0.0f)
 		mz = c->adjustedMass(charge);
     searchText->setText(QString::number(mz, 'f', 8));
 
@@ -1480,7 +1508,7 @@ void MainWindow::setCompoundFocus(Compound*c) {
     if (fragPanel->isVisible())
         showFragmentationScans(mz);
 
-    QString compoundName(c->name.c_str());
+    QString compoundName(c->name().c_str());
     setPeptideSequence(compoundName);
 
 	/*
@@ -1638,6 +1666,7 @@ void MainWindow::open()
     // TODO: temporarily added for informing user, remove after a few releases
     if (!_versionRecordExists()) {
         QMessageBox msgBox;
+        msgBox.setWindowTitle("El-MAVEN");
         msgBox.setText("El-MAVEN is now capable of reading files containing "
                        "zlib compressed data. Please feel free to load such "
                        "files, if you have any.");
@@ -1843,7 +1872,7 @@ void MainWindow::_postCompoundsDBLoadActions(QString filename,
     deque<Compound*> compoundsDB = DB.getCompoundsDB();
     for (int i = 0; i < compoundsDB.size(); i++) {
         Compound* currentCompound = compoundsDB[i];
-        if (currentCompound->db == dbName) {
+        if (currentCompound->db() == dbName) {
             reloading = true;
             break;
         }
@@ -1860,9 +1889,9 @@ void MainWindow::_postCompoundsDBLoadActions(QString filename,
         vector<Compound*> loadedCompounds = DB.getCompoundsSubset(dbName);
         if (!loadedCompounds.empty()) {
             QString eventLabel = "MS1";
-            if (loadedCompounds[0]->precursorMz > 0
-                && (loadedCompounds[0]->productMz > 0
-                    || loadedCompounds[0]->fragmentMzValues.size() > 0)) {
+            if (loadedCompounds[0]->precursorMz() > 0
+                && (loadedCompounds[0]->productMz() > 0
+                    || loadedCompounds[0]->fragmentMzValues().size() > 0)) {
                 eventLabel = DB.isSpectralLibrary(dbName) ? "MS2 (PRM)"
                                                       : "MS2 (MRM)";
             }
@@ -1976,7 +2005,15 @@ void MainWindow::_warnIfNISTPolarityMismatch()
         return;
 
     int samplePolarity = sample->getPolarity();
-    int dbPolarity = DB.getCompoundsSubset(dbName)[0]->ionizationMode;
+    Compound::IonizationMode polarity = DB.getCompoundsSubset(dbName)[0]->ionizationMode;
+    int dbPolarity = 0;
+    if (polarity == Compound::IonizationMode::Positive)
+        dbPolarity = 1;
+    else if (polarity == Compound::IonizationMode::Negative)
+        dbPolarity = -1;
+    else
+        dbPolarity = 0;
+
     if (samplePolarity != dbPolarity) {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Polarity Mismatch"));
@@ -2725,26 +2762,22 @@ void MainWindow::createMenus() {
 	QAction* faq = helpMenu->addAction("FAQs");
 	connect(faq, SIGNAL(triggered()), signalMapper, SLOT(map()));
 
-	QAction* start = helpMenu->addAction("Getting Started");
-	connect(start,SIGNAL(triggered(bool)), gettingstarted, SLOT(show()));
-
 	signalMapper->setMapping(doc, 1);
 	signalMapper->setMapping(tutorial, 2);
 	signalMapper->setMapping(faq, 3);
 
-	connect(signalMapper, SIGNAL(mapped(int)), this, SLOT(openURL(int)));
+    connect(signalMapper,
+            QOverload<int>::of(&QSignalMapper::mapped),
+            [this] (int choice) {
+                map<int,QUrl> URL{
+                    {1, QUrl("https://github.com/ElucidataInc/ElMaven/wiki")},
+                    {2, QUrl("https://www.youtube.com/channel/UCZYVM0I1zqRgkGTdIlQZ9Yw/videos")},
+                    {3, QUrl("https://elucidatainc.github.io/ElMaven/faq/")}
+                };
+                QDesktopServices::openUrl(URL[choice]);
+            });
 
 	menuBar()->show();
-}
-
-void MainWindow::openURL(int choice)
-{
-	map<int,QUrl> URL{
-		{1, QUrl("https://github.com/ElucidataInc/ElMaven/wiki")},
-		{2, QUrl("https://www.youtube.com/channel/UCZYVM0I1zqRgkGTdIlQZ9Yw/videos")},
-		{3, QUrl("https://elucidatainc.github.io/ElMaven/faq/")}
-	};
-	QDesktopServices::openUrl(URL[choice]);
 }
 
 QToolButton* MainWindow::addDockWidgetButton(QToolBar* bar,
@@ -2894,6 +2927,7 @@ void MainWindow::createToolBars() {
 	QToolBar *toolBar = new QToolBar(this);
 	toolBar->setObjectName("mainToolBar");
 	toolBar->setMovable(false);
+    toolBar->setIconSize(QSize(24, 24));
 
 	QToolButton *btnOpen = new QToolButton(toolBar);
 	btnOpen->setText("Open");
@@ -3114,6 +3148,7 @@ void MainWindow::createToolBars() {
 
     sideBar = new QToolBar(this);
     sideBar->setObjectName("sideBar");
+    sideBar->setIconSize(QSize(24, 24));
 
     QToolButton* btnSamples = addDockWidgetButton(sideBar,
 												  projectDockWidget,
@@ -3387,7 +3422,7 @@ void MainWindow::setPeakGroup(PeakGroup* group) {
 		if (fragSpectraDockWidget->isVisible()) {
 			fragSpectraWidget->overlayPeakGroup(group);
 		}
-        QString compoundName(group->getCompound()->name.c_str());
+        QString compoundName(group->getCompound()->name().c_str());
         if (! setPeptideSequence(compoundName)) {
             setUrl(group->getCompound());
         }
@@ -3642,8 +3677,8 @@ QString MainWindow::groupTextExport(PeakGroup* group) {
 	float expectedRt = -1;
 
 	if (group->hasCompoundLink()) {
-		compoundName = "\"" + QString(group->getCompound()->name.c_str()) + "\"";
-		expectedRt = group->getCompound()->expectedRt;
+                compoundName = "\"" + QString(group->getCompound()->name().c_str()) + "\"";
+                expectedRt = group->getCompound()->expectedRt();
 	}
 
 	if (compoundName.isEmpty() && group->srmId.length()) {
@@ -3768,7 +3803,8 @@ QWidget* MainWindow::eicWidgetController() {
 
 	QToolBar *toolBar = new QToolBar(this);
 	toolBar->setFloatable(false);
-	toolBar->setMovable(false);
+    toolBar->setMovable(false);
+    toolBar->setIconSize(QSize(24, 24));
 
 	QWidgetAction *btnZoom = new MainWindowWidgetAction(toolBar, this,  "btnZoom");
 	QWidgetAction *btnBookmark = new MainWindowWidgetAction(toolBar, this,  "btnBookmark");
@@ -4003,6 +4039,10 @@ QWidget* MainWindowWidgetAction::createWidget(QWidget *parent) {
                                            "tolerance"));
         toleranceSyncSwitch->setCheckable(true);
         toleranceSyncSwitch->setChecked(false);
+        if (mw->getEicWidget()->getParameters()->selectedGroup() == nullptr){
+            toleranceSyncSwitch->setEnabled(false);
+        }
+
         connect(toleranceSyncSwitch, &QToolButton::toggled, this, [=](bool on) {
             if (on) {
                 QIcon locked(rsrcPath + "/toleranceSyncLock.png");
@@ -4176,7 +4216,7 @@ void MainWindow::getLinks(Peak* peak) {
 		QSet<Compound*> compunds = massCalcWidget->findMathchingCompounds(
 				links[i].mz2, massCutoff, mavenParameters->getCharge());
 		if (compunds.size() > 0)
-			Q_FOREACH( Compound*c, compunds){ links[i].note += " |" + c->name; break;}
+                        Q_FOREACH( Compound*c, compunds){ links[i].note += " |" + c->name(); break;}
 	}
 
 	vector<mzLink> subset;
@@ -4188,8 +4228,6 @@ void MainWindow::getLinks(Peak* peak) {
 		covariantsPanel->setInfo(subset);
 	if (subset.size() && galleryDockWidget->isVisible())
 		galleryWidget->addEicPlots(subset);
-	if (adductWidget->isVisible())
-		adductWidget->setPeak(peak);
 }
 
 
@@ -4292,10 +4330,10 @@ MatrixXf MainWindow::getIsotopicMatrix(PeakGroup* group) {
 			MM(j, i) = values[j];  //rows=samples, columns=isotopes
 	}
 
-    int numberofCarbons = 0;
-    if (group->getCompound() && !group->getCompound()->formula().empty()) {
-        map<string, int> composition = MassCalculator::getComposition(
-            group->getCompound()->formula());
+	int numberofCarbons = 0;
+        if (group->getCompound() && !group->getCompound()->formula().empty()) {
+		map<string, int> composition = MassCalculator::getComposition(
+                                group->getCompound()->formula());
 		numberofCarbons = composition["C"];
 	}
 	isotopeC13Correct(MM, numberofCarbons, carbonIsotopeSpecies);
@@ -4347,10 +4385,10 @@ MatrixXf MainWindow::getIsotopicMatrixIsoWidget(PeakGroup* group) {
 		}
 	}
 
-    int numberofCarbons = 0;
-    if (group->getCompound() && !group->getCompound()->formula().empty()) {
-        map<string, int> composition = MassCalculator::getComposition(
-            group->getCompound()->formula());
+	int numberofCarbons = 0;
+        if (group->getCompound() && !group->getCompound()->formula().empty()) {
+		map<string, int> composition = MassCalculator::getComposition(
+                                group->getCompound()->formula());
 		numberofCarbons = composition["C"];
 	}
 

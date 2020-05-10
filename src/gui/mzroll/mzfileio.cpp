@@ -9,6 +9,7 @@
 #include "common/analytics.h"
 #include "base64.h"
 #include "Compound.h"
+#include "datastructures/adduct.h"
 #include "errorcodes.h"
 #include "globals.h"
 #include "ligandwidget.h"
@@ -186,11 +187,13 @@ PK$PEAK: m/z int. rel.int.
         if(line.startsWith("//",Qt::CaseInsensitive) && !name.isEmpty()) {
             if (!name.isEmpty()) { //insert new compound
                Compound* cpd = new Compound( id.toStdString(), name.toStdString(), formula.toStdString(), charge);
-               cpd->precursorMz=precursor;
-               cpd->db=dbname;
-               cpd->fragmentMzValues = mzs;
-               cpd->fragmentIntensities = intest;
-			   Q_FOREACH (QString cat, compound_class) { cpd->category.push_back(cat.toStdString()); }
+               cpd->setPrecursorMz(precursor);
+               cpd->setDb(dbname);
+               cpd->setFragmentMzValues(mzs);
+               cpd->setFragmentIntensities(intest);
+               vector<string> category;
+               Q_FOREACH (QString cat, compound_class) { category.push_back(cat.toStdString()); }
+                           cpd->setCategory(category);
                DB.addCompound(cpd);
                compoundCount++;
             }
@@ -299,9 +302,9 @@ int mzFileIO::loadPepXML(QString fileName) {
 				    formula.toStdString(),
 				    charge);
 
-		    cpd->mass=precursorMz;
-		    cpd->precursorMz=precursorMz;
-		    cpd->db=dbname;
+                    cpd->setMz(precursorMz);
+                    cpd->setPrecursorMz(precursorMz);
+                    cpd->setDb(dbname);
 		    DB.addCompound(cpd);
 
                 } else if (xml.name() == "mod_aminoacid_mass" ) {
@@ -846,6 +849,46 @@ bool mzFileIO::writeSQLiteProject(QString filename)
     return false;
 }
 
+bool mzFileIO::writeSQLiteProjectForPolly(QString filename)
+{
+    vector<mzSample*> sampleSet = _mainwindow->getSamples();
+    if (sampleSet.size() == 0)
+        return false;
+
+    auto version = _mainwindow->appVersion().toStdString();
+    auto sessionDb = new ProjectDatabase(filename.toStdString(), version);
+    if (sessionDb) {
+        sessionDb->deleteAll();
+        sessionDb->saveSettings(_settingsMap);
+        sessionDb->saveSamples(sampleSet);
+        sessionDb->saveAlignment(sampleSet);
+
+        vector<PeakGroup*> groupVector;
+        set<Compound*> compoundSet;
+        int topLevelGroupCount = 0;
+        auto allTablesList = _mainwindow->getPeakTableList();
+        allTablesList.push_back(_mainwindow->bookmarkedPeaks);
+        for (const auto& peakTable : allTablesList) {
+            for (PeakGroup* group : peakTable->getGroups()) {
+                topLevelGroupCount++;
+                groupVector.push_back(group);
+                if (group->getCompound())
+                    compoundSet.insert(group->getCompound());
+            }
+            string tableName = peakTable->titlePeakTable
+                                        ->text().toStdString();
+            sessionDb->saveGroups(groupVector, tableName);
+            groupVector.clear();
+        }
+        sessionDb->saveCompounds(compoundSet);
+        qDebug() << "finished writing to project" << filename;
+        sessionDb->vacuum();
+        return true;
+    }
+    qDebug() << "cannot write to closed project" << filename;
+    return false;
+}
+
 QString mzFileIO::openSQLiteProject(QString filename)
 {
     if (_currentProject)
@@ -870,8 +913,16 @@ void mzFileIO::_beginSQLiteProjectLoad()
 {
     emit updateStatusString("Loading compounds…");
     auto compounds = _currentProject->loadCompounds();
-    for (auto compound : compounds)
+    QRegularExpression re("(.*)\\s\\(\\d+\\)");
+    for (auto compound : compounds) {
+        QRegularExpressionMatch match =
+            re.match(QString::fromStdString(compound->name()));
+        if (match.hasMatch()) {
+            string nameWithoutPrefix = match.captured(1).toStdString();
+            compound->setName (nameWithoutPrefix);
+        }
         DB.addCompound(compound);
+    }
 
     emit updateStatusString("Loading user settings…");
     auto settings = _currentProject->loadSettings();
@@ -997,29 +1048,26 @@ void mzFileIO::_readPeakTablesFromSQLiteProject(const vector<mzSample*> newSampl
     auto groupCount = 0;
     for (auto& group : groups) {
         // assign a compound from global "DB" object to the group
-        if (group->getCompound() && !group->getCompound()->db.empty()) {
-            auto matches = DB.findSpeciesByName(group->getCompound()->name,
-                                                group->getCompound()->db);
-            if (matches.size()) {
-                group->setCompound(matches.at(0));
-            } else {
-                group->setCompound(DB.findSpeciesByIdAndName(group->getCompound()->id,
-                                                             group->getCompound()->name,
-                                                             group->getCompound()->db));
-            }
-            dbNames.push_back(QString::fromStdString(group->getCompound()->db));
+        if (group->getCompound() && !group->getCompound()->db().empty()) {
+            group->setCompound(DB.findSpeciesByIdAndName(group->getCompound()->id(),
+                                                         group->getCompound()->name(),
+                                                         group->getCompound()->db()));
+            dbNames.push_back(QString::fromStdString(group->getCompound()->db()));
         }
 
+        if (group->getAdduct() != nullptr)
+            group->setAdduct(DB.findAdductByName(group->getAdduct()->getName()));
+
         // assign group to bookmark table if none exists
-        if (group->searchTableName.empty())
-            group->searchTableName = "Bookmark Table";
+        if (group->tableName().empty())
+            group->setTableName("Bookmark Table");
 
         // find appropriate tables and populate them
         auto allTablesList = _mainwindow->getPeakTableList();
         allTablesList.push_back(_mainwindow->bookmarkedPeaks);
         TableDockWidget* table = nullptr;
         for (auto t : allTablesList)
-            if (t->windowTitle().toStdString() == group->searchTableName)
+            if (t->windowTitle().toStdString() == group->tableName())
                 table = t;
 
         if (table)
@@ -1197,9 +1245,9 @@ PeakGroup* mzFileIO::readGroupXML(QXmlStreamReader& xml, PeakGroup* parent)
     } else if (!compoundId.empty()) {
         Compound* c = nullptr;
 
-        if (group->getCompound() && !group->getCompound()->name.empty()) {
+        if (group->getCompound() && !group->getCompound()->name().empty()) {
             c = DB.findSpeciesByIdAndName(compoundId,
-                                          group->getCompound()->name,
+                                          group->getCompound()->name(),
                                           DB.ANYDATABASE);
         } else if (!compoundDB.empty()) {
             vector<Compound*> matches = DB.findSpeciesById(compoundId, compoundDB);

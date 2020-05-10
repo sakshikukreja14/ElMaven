@@ -17,6 +17,7 @@ class QCustomPlot;
 class QDoubleSpinBox;
 class QSpinBox;
 
+class Adduct;
 class SRMList;
 class Controller;
 class VideoPlayer;
@@ -33,7 +34,6 @@ class GroupRtWidget;
 class AlignmentVizAllGroupsWidget;
 class IsotopicPlots;
 class AdductWidget;
-class GettingStarted;
 class LigandWidget;
 class PathwayWidget;
 class IsotopeWidget;
@@ -114,7 +114,7 @@ public:
 	SRMList *srmList;
     map<string, Compound*> annotation;
 	
-    VideoPlayer* vidPlayer;
+	VideoPlayer* vidPlayer;
 	PathwayWidget *pathwayWidget;
 	SpectraWidget *spectraWidget;
 	SpectraWidget* fragSpectraWidget;
@@ -129,7 +129,6 @@ public:
 	QCustomPlot *alignmentVizAllGroupsPlot;
 	MassCalcWidget *massCalcWidget;
 	AdductWidget *adductWidget;
-	GettingStarted *gettingstarted;
 	LigandWidget *ligandWidget;
 	IsotopeWidget *isotopeWidget;
 	TreeDockWidget *covariantsPanel;
@@ -281,6 +280,7 @@ Q_SIGNALS:
 	void reBoot();
     void metaCsvFileLoaded();
     void loadedSettings();
+    void updateAllowed();
 
 protected:
 	void closeEvent(QCloseEvent *event);
@@ -432,9 +432,16 @@ public Q_SLOTS:
      */
     const Mixpanel* getUsageTracker() { return _usageTracker; }
 
+    /**
+     * @brief Informs the user that a new version of the application is
+     * available and prompts an update operation.
+     * @param version The new version of application that has been made
+     * available.
+     */
+    void promptUpdate(QString version);
+
 private Q_SLOTS:
 	void createMenus();
-	void openURL(int choice);
 	void createToolBars();
 	void readSettings();
 	void writeSettings();

@@ -63,26 +63,30 @@ Mixpanel::Mixpanel()
 
     QMap<QString, QVariant> properties;
     properties["First session"] = _isFirstSession;
-    trackEvent("Session Start", properties);
+    trackEvent("EM Session Start", properties);
 }
 
 Mixpanel::~Mixpanel()
 {
-    trackEvent("Session End", QMap<QString, QVariant>());
+    trackEvent("EM Session End", QMap<QString, QVariant>(), true);
 }
 
 void Mixpanel::trackEvent(const QString& event,
-                          QMap<QString, QVariant> properties) const
+                          QMap<QString, QVariant> properties,
+                          bool waitForFinish) const
 {
     properties["token"] = _authToken;
     properties["distinct_id"] = _clientId;
     properties["time"] = _getUnixTime();
+    properties["Version"] = qApp->applicationVersion();
     QJsonObject eventData
     {
         {"event", event},
         {"properties", QJsonObject::fromVariantMap(properties)}
     };
-    _httpRequest(QJsonDocument(eventData).toJson().toBase64());
+    _httpRequest(QJsonDocument(eventData).toJson().toBase64(),
+                 true,
+                 waitForFinish);
 }
 
 void Mixpanel::updateUser(const QString& attribute, const QVariant& value) const
@@ -110,7 +114,9 @@ uint Mixpanel::_getUnixTime() const
     return static_cast<uint>(::time(nullptr));
 }
 
-void Mixpanel::_httpRequest(QByteArray data, bool isEventRequest) const
+void Mixpanel::_httpRequest(QByteArray data,
+                            bool isEventRequest,
+                            bool waitForFinish) const
 {
     QUrlQuery query;
     QByteArray params;
@@ -119,9 +125,15 @@ void Mixpanel::_httpRequest(QByteArray data, bool isEventRequest) const
     params.append(query.query());
 
     QNetworkAccessManager* manager = new QNetworkAccessManager();
+    QNetworkReply* reply = nullptr;
     if (isEventRequest) {
-        manager->post(_eventRequest, params);
+        reply = manager->post(_eventRequest, params);
     } else {
-        manager->post(_userRequest, params);
+        reply = manager->post(_userRequest, params);
+    }
+
+    if (reply != nullptr && waitForFinish) {
+        while (reply->isRunning())
+            QCoreApplication::processEvents();
     }
 }

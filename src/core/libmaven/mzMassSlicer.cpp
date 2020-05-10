@@ -306,11 +306,16 @@ void MassSlices::_reduceSlices()
         if (mzUtils::almostEqual(firstSlice->ionCount, -1.0f))
             continue;
 
+        // we will use this to terminate large shifts in slices, where they
+        // might end up losing their original information completely
+        auto originalMax = firstSlice->mzmax;
+
         for (auto second = next(first); second != end(slices); ++second) {
             auto secondSlice = *second;
 
             // stop iterating if the rest of the slices are too far
-            if (firstSlice->mzmax < secondSlice->mzmin)
+            if (originalMax < secondSlice->mzmin
+                || firstSlice->mzmax < secondSlice->mzmin)
                 break;
 
             if (mzUtils::almostEqual(secondSlice->ionCount, -1.0f))
@@ -603,9 +608,12 @@ void MassSlices::adjustSlices()
         float highestIntensity = 0.0f;
         float mzAtHighestIntensity = 0.0f;
         for (auto eic : eics) {
-            if (eic->maxIntensity > highestIntensity) {
-                highestIntensity = eic->maxIntensity;
-                mzAtHighestIntensity = eic->mzAtMaxIntensity;
+            size_t size = eic->intensity.size();
+            for (int i = 0; i < size; ++i) {
+                if (eic->spline[i] > highestIntensity) {
+                    highestIntensity = eic->spline[i];
+                    mzAtHighestIntensity = eic->mz[i];
+                }
             }
         }
         float cutoff = mavenParameters->massCutoffMerge

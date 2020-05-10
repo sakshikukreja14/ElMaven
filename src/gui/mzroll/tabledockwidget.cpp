@@ -465,7 +465,7 @@ PeakGroup *TableDockWidget::addPeakGroup(PeakGroup *group) {
       _targetedGroups++;
     if (allgroups.size() > 0) {
       PeakGroup &g = allgroups.back();
-      g.searchTableName = this->titlePeakTable->text().toStdString();
+      g.setTableName(this->titlePeakTable->text().toStdString());
       for (unsigned int i = 0; i < allgroups.size(); i++) {
         allgroups[i].groupId = i + 1;
         allgroups[i].setGroupIdForChildren();
@@ -657,16 +657,18 @@ void TableDockWidget::exportGroupsToSpreadsheet() {
                             end(allgroups),
                             [] (PeakGroup& group) {
                               if (group.getCompound() == nullptr) return false;
-                              return group.getCompound()->type() == Compound::Type::PRM;
+                              return group.getCompound()->type() == Compound::Type::MS2;
                             });
   bool prmGroupExists = prmGroupAt != end(allgroups);
-  bool includeSetNamesLines = true;
+  bool includeSetNamesLines = false;
 
   auto reportType = CSVReports::ReportType::GroupReport;
   if (sFilterSel == groupsSCSV) {
     reportType = CSVReports::ReportType::GroupReport;
+    includeSetNamesLines = true;
   } else if (sFilterSel == groupsSTAB) {
     reportType = CSVReports::ReportType::GroupReport;
+    includeSetNamesLines = true;
   } else if (sFilterSel == peaksCSV) {
     reportType = CSVReports::ReportType::PeakReport;
   } else if (sFilterSel == peaksTAB) {
@@ -757,10 +759,10 @@ void TableDockWidget::prepareDataForPolly(QString writableTempDir,
         find_if(begin(allgroups), end(allgroups), [](PeakGroup& group) {
             if (!group.getCompound())
                 return false;
-            return group.getCompound()->type() == Compound::Type::PRM;
+            return group.getCompound()->type() == Compound::Type::MS2;
         });
     bool ddaGroupExists = ddaGroupAt != end(allgroups);
-    bool includeSetNamesLines = true;
+    bool includeSetNamesLines = false;
 
     auto reportType = CSVReports::ReportType::GroupReport;
     char flag;
@@ -932,6 +934,24 @@ vector<EIC *> TableDockWidget::getEICs(float rtmin,
     }
   }
   return (eics);
+}
+
+bool TableDockWidget::selectPeakGroup(PeakGroup *group)
+{
+  if (group == nullptr)
+    return false;
+
+  QTreeWidgetItemIterator it(treeWidget);
+  while (*it) {
+    QTreeWidgetItem *item = (*it);
+    QVariant v = item->data(0, Qt::UserRole);
+    PeakGroup *currentGroup = v.value<PeakGroup *>();
+    if (currentGroup == group) {
+        treeWidget->setCurrentItem(item);
+      return true;
+    }
+  }
+  return false;
 }
 
 void TableDockWidget::showSelectedGroup() {
@@ -1633,7 +1653,7 @@ void TableDockWidget::findMatchingCompounds() {
                                                             charge);
     if (compounds.size() > 0)
       Q_FOREACH (Compound *c, compounds) {
-        g.tagString += " |" + c->name;
+        g.tagString += " |" + c->name();
         break;
       }
   }
@@ -2192,10 +2212,16 @@ QWidget *TableToolBarWidgetAction::createWidget(QWidget *parent) {
     btnBad->setToolTip("Mark selected group as bad");
     connect(btnBad, SIGNAL(clicked()), td, SLOT(markGroupBad()));
     return btnBad;
+  } else if (btnName == "btnUnmark") {
+    QToolButton *btnUnmark = new QToolButton(parent);
+    btnUnmark->setIcon(QIcon(rsrcPath + "/unmark.png"));
+    btnUnmark->setToolTip("Unmark selected group from good/bad");
+    connect(btnUnmark, SIGNAL(clicked()), td, SLOT(unmarkGroup()));
+    return btnUnmark;
   } else if (btnName == "btnHeatmapelete") {
 
     QToolButton *btnHeatmapelete = new QToolButton(parent);
-    btnHeatmapelete->setIcon(QIcon(rsrcPath + "/delete.png"));
+    btnHeatmapelete->setIcon(QIcon(rsrcPath + "/Delete Group.png"));
     btnHeatmapelete->setToolTip("Delete Group");
     connect(btnHeatmapelete, SIGNAL(clicked()), td, SLOT(deleteGroups()));
     return btnHeatmapelete;
@@ -2236,6 +2262,7 @@ PeakTableDockWidget::PeakTableDockWidget(MainWindow *mw,
   toolBar = new QToolBar(this);
   toolBar->setFloatable(false);
   toolBar->setMovable(false);
+  toolBar->setIconSize(QSize(24, 24));
 
   QWidgetAction *titlePeakTable =
       new TableToolBarWidgetAction(toolBar, this, "titlePeakTable");
@@ -2253,7 +2280,10 @@ PeakTableDockWidget::PeakTableDockWidget(MainWindow *mw,
       new TableToolBarWidgetAction(toolBar, this, "btnTrain");
   QWidgetAction *btnGood =
       new TableToolBarWidgetAction(toolBar, this, "btnGood");
-  QWidgetAction *btnBad = new TableToolBarWidgetAction(toolBar, this, "btnBad");
+  QWidgetAction *btnBad =
+      new TableToolBarWidgetAction(toolBar, this, "btnBad");
+  QWidgetAction *btnUnmark =
+      new TableToolBarWidgetAction(toolBar, this, "btnUnmark");
   QWidgetAction *btnHeatmapelete =
       new TableToolBarWidgetAction(toolBar, this, "btnHeatmapelete");
   QWidgetAction *btnPDF = new TableToolBarWidgetAction(toolBar, this, "btnPDF");
@@ -2267,6 +2297,7 @@ PeakTableDockWidget::PeakTableDockWidget(MainWindow *mw,
   toolBar->addAction(btnSwitchView);
   toolBar->addAction(btnGood);
   toolBar->addAction(btnBad);
+  toolBar->addAction(btnUnmark);
   toolBar->addAction(btnTrain);
   toolBar->addAction(btnHeatmapelete);
 
@@ -2320,6 +2351,7 @@ BookmarkTableDockWidget::BookmarkTableDockWidget(MainWindow *mw) : TableDockWidg
   toolBar = new QToolBar(this);
   toolBar->setFloatable(false);
   toolBar->setMovable(false);
+  toolBar->setIconSize(QSize(24, 24));
   btnMerge = new QToolButton(toolBar);
   btnMerge->setIcon(QIcon(rsrcPath + "/merge.png"));
   btnMerge->setToolTip("Merge Groups With");
@@ -2349,11 +2381,13 @@ BookmarkTableDockWidget::BookmarkTableDockWidget(MainWindow *mw) : TableDockWidg
       new TableToolBarWidgetAction(toolBar, this, "btnTrain");
   QWidgetAction *btnGood =
       new TableToolBarWidgetAction(toolBar, this, "btnGood");
-  QWidgetAction *btnBad = new TableToolBarWidgetAction(toolBar, this, "btnBad");
+  QWidgetAction *btnBad =
+      new TableToolBarWidgetAction(toolBar, this, "btnBad");
+  QWidgetAction *btnUnmark =
+      new TableToolBarWidgetAction(toolBar, this, "btnUnmark");
   QWidgetAction *btnHeatmapelete =
       new TableToolBarWidgetAction(toolBar, this, "btnHeatmapelete");
   QWidgetAction *btnPDF = new TableToolBarWidgetAction(toolBar, this, "btnPDF");
-  QWidgetAction *btnX = new TableToolBarWidgetAction(toolBar, this, "btnX");
   QWidgetAction *btnMin = new TableToolBarWidgetAction(toolBar, this, "btnMin");
 
   QWidget *spacer = new QWidget();
@@ -2363,6 +2397,7 @@ BookmarkTableDockWidget::BookmarkTableDockWidget(MainWindow *mw) : TableDockWidg
   toolBar->addAction(btnSwitchView);
   toolBar->addAction(btnGood);
   toolBar->addAction(btnBad);
+  toolBar->addAction(btnUnmark);
   toolBar->addAction(btnTrain);
   toolBar->addAction(btnHeatmapelete);
   toolBar->addWidget(btnMerge);
@@ -2479,11 +2514,8 @@ void BookmarkTableDockWidget::mergeGroupsIntoPeakTable(QAction *action)
 
     int initialSize = peakTable->allgroups.size();
     int finalSize = allgroups.size() + initialSize;
-    for (auto group : allgroups) {
-        group.groupId = ++initialSize;
-        group.setGroupIdForChildren();
-        peakTable->allgroups.append(group);
-    }
+    for (auto group : allgroups)
+        peakTable->addPeakGroup(&group);
 
     deleteAll();
     peakTable->showAllGroups();
@@ -2695,6 +2727,7 @@ ScatterplotTableDockWidget::ScatterplotTableDockWidget(MainWindow *mw) :
   toolBar = new QToolBar(this);
   toolBar->setFloatable(false);
   toolBar->setMovable(false);
+  toolBar->setIconSize(QSize(24, 24));
 
   QWidgetAction *titlePeakTable =
       new TableToolBarWidgetAction(toolBar, this, "titlePeakTable");
@@ -2710,11 +2743,13 @@ ScatterplotTableDockWidget::ScatterplotTableDockWidget(MainWindow *mw) :
       new TableToolBarWidgetAction(toolBar, this, "btnTrain");
   QWidgetAction *btnGood =
       new TableToolBarWidgetAction(toolBar, this, "btnGood");
-  QWidgetAction *btnBad = new TableToolBarWidgetAction(toolBar, this, "btnBad");
+  QWidgetAction *btnBad =
+      new TableToolBarWidgetAction(toolBar, this, "btnBad");
+  QWidgetAction *btnUnmark =
+      new TableToolBarWidgetAction(toolBar, this, "btnUnmark");
   QWidgetAction *btnHeatmapelete =
       new TableToolBarWidgetAction(toolBar, this, "btnHeatmapelete");
   QWidgetAction *btnPDF = new TableToolBarWidgetAction(toolBar, this, "btnPDF");
-  QWidgetAction *btnX = new TableToolBarWidgetAction(toolBar, this, "btnX");
   QWidgetAction *btnMin = new TableToolBarWidgetAction(toolBar, this, "btnMin");
 
   QWidget *spacer = new QWidget();
@@ -2724,6 +2759,7 @@ ScatterplotTableDockWidget::ScatterplotTableDockWidget(MainWindow *mw) :
   toolBar->addAction(btnSwitchView);
   toolBar->addAction(btnGood);
   toolBar->addAction(btnBad);
+  toolBar->addAction(btnUnmark);
   toolBar->addAction(btnTrain);
   toolBar->addAction(btnHeatmapelete);
 

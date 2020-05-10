@@ -3,9 +3,11 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 class Compound;
 class MassCutoff;
+class Adduct;
 
 using namespace std;
 
@@ -37,6 +39,7 @@ class mzSlice
         float rtmax;
         float ionCount;
         Compound *compound;
+        Adduct* adduct;
         string srmId;
 
         /**
@@ -107,6 +110,7 @@ class mzSlice
             rtmax = b.rtmax;
             ionCount = b.ionCount;
             compound = b.compound;
+            adduct = b.adduct;
             srmId = b.srmId;
             mz = b.mz;
             rt = b.rt;
@@ -122,6 +126,26 @@ class mzSlice
         bool operator<(const mzSlice *b) const
         {
             return mz < b->mz;
+        }
+
+        /**
+         * @brief Check equality of two slices
+         * @param b The slice being compared against this one.
+         * @return `true` if all attributes of this slice equal the other one,
+         * `false` otherwise.
+         */
+        bool operator==(const mzSlice &b) const
+        {
+            return (mzmin == b.mzmin
+                    && mzmax == b.mzmax
+                    && rtmin == b.rtmin
+                    && rtmax == b.rtmax
+                    && ionCount == b.ionCount
+                    && compound == b.compound
+                    && adduct == b.adduct
+                    && srmId == b.srmId
+                    && mz == b.mz
+                    && rt == b.rt);
         }
 
         /**

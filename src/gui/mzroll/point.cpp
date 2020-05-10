@@ -1,4 +1,3 @@
-#include "adductwidget.h"
 #include "common/analytics.h"
 #include "Compound.h"
 #include "eiclogic.h"
@@ -62,6 +61,13 @@ EicPoint::EicPoint(float x, float y, Peak* peak, MainWindow* mw)
 }
 
 EicPoint::~EicPoint() {}
+
+void EicPoint::removeFromScene()
+{
+    prepareGeometryChange();
+    if (scene() != nullptr)
+        scene()->removeItem(this);
+}
 
 QRectF EicPoint::boundingRect() const
 {
@@ -226,8 +232,6 @@ void EicPoint::_updateWidgetsForPeakGroup(MainWindow* mw,
         mw->isotopeWidget->peakSelected(peak, group);
     if (peak && mw->covariantsPanel->isVisible())
         mw->getLinks(peak);
-    if (peak && mw->adductWidget->isVisible())
-        mw->adductWidget->setPeak(peak);
     if (peak == nullptr)
         //ms2 markers have no peaks
         mw->getAnalytics()->hitEvent("DDA", "ClickedOnMarker");
@@ -314,11 +318,9 @@ void EicPoint::setClipboardToIsotopes() {
 
 void EicPoint::linkCompound() {
     if (_group &&_group->getCompound() != NULL )  {
-            //link group to compound
-            _group->getCompound()->setPeakGroup(*_group);
 
             //update compound retention time
-            if (_peak) _group->getCompound()->expectedRt=_peak->rt;
+            if (_peak) _group->getCompound()->setExpectedRt(_peak->rt);
 
             //log information about retention time change
            // _mw->getEicWidget()->addNote(_peak->peakMz,_peak->peakIntensity, "Compound Link");

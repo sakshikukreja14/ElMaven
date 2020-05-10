@@ -5,6 +5,7 @@
 #include "Compound.h"
 #include "connection.h"
 #include "cursor.h"
+#include "datastructures/adduct.h"
 #include "mzMassCalculator.h"
 #include "mzAligner.h"
 #include "mzSample.h"
@@ -203,7 +204,7 @@ int ProjectDatabase::saveGroupAndPeaks(PeakGroup* group,
     groupsQuery->bind(":expected_abundance", group->expectedAbundance);
     groupsQuery->bind(":group_rank", group->groupRank);
     groupsQuery->bind(":label", string(1, group->label));
-    groupsQuery->bind(":type", group->type());
+    groupsQuery->bind(":type", static_cast<int>(group->type()));
     groupsQuery->bind(":srm_id", group->srmId);
 
     groupsQuery->bind(":ms2_event_count", group->ms2EventCount);
@@ -228,14 +229,15 @@ int ProjectDatabase::saveGroupAndPeaks(PeakGroup* group,
     groupsQuery->bind(":fragmentation_num_matches",
                       group->fragMatchScore.numMatches);
 
-    groupsQuery->bind(":adduct_name", group->adduct ? group->adduct->name : "");
+    groupsQuery->bind(":adduct_name", group->getAdduct()
+                                          ? group->getAdduct()->getName() : "");
 
     groupsQuery->bind(":compound_id",
-                      group->getCompound() ? group->getCompound()->id : "");
+                      group->getCompound() ? group->getCompound()->id() : "");
     groupsQuery->bind(":compound_name",
-                      group->getCompound() ? group->getCompound()->name : "");
+                      group->getCompound() ? group->getCompound()->name() : "");
     groupsQuery->bind(":compound_db",
-                      group->getCompound() ? group->getCompound()->db : "");
+                      group->getCompound() ? group->getCompound()->db() : "");
 
     groupsQuery->bind(":table_name", tableName);
     groupsQuery->bind(":min_quality", group->minQuality);
@@ -415,7 +417,8 @@ void ProjectDatabase::saveCompounds(const set<Compound*>& seenCompounds)
 
     for (Compound* c : seenCompounds) {
         stringstream categories;
-        for (string s : c->category) {
+        auto category = c->category();
+        for (string s : category) {
             categories << s.c_str() << ";";
         }
         string catStr = categories.str();
@@ -424,15 +427,18 @@ void ProjectDatabase::saveCompounds(const set<Compound*>& seenCompounds)
         stringstream fragMz;
         stringstream fragIntensity;
         stringstream fragIonType;
-        size_t numFragments = c->fragmentMzValues.size();
+        size_t numFragments = c->fragmentMzValues().size();
         if (numFragments != 0
-            && (numFragments == c->fragmentIntensities.size())
-            && (numFragments == c->fragmentIonTypes.size())) {
+            && (numFragments == c->fragmentIntensities().size())
+            && (numFragments == c->fragmentIonTypes().size())) {
+            auto fragmentMzValues = c->fragmentMzValues();
+            auto fragmentIonTypes = c->fragmentIonTypes();
+            auto fragmentIntensities = c->fragmentIntensities();
             for (size_t i = 0; i < numFragments - 1; ++i) {
                 // presumption: all three containers are of the same size
-                auto mz = c->fragmentMzValues[i];
-                auto intensity = c->fragmentIntensities[i];
-                auto ionType = c->fragmentIonTypes[i];
+                auto mz = fragmentMzValues[i];
+                auto intensity = fragmentIntensities[i];
+                auto ionType = fragmentIonTypes[i];
 
                 fragMz << fixed << setprecision(10) << mz << ";";
                 fragIntensity << fixed << setprecision(10) << intensity << ";";
@@ -440,39 +446,47 @@ void ProjectDatabase::saveCompounds(const set<Compound*>& seenCompounds)
             }
             fragMz << fixed
                    << setprecision(10)
-                   << c->fragmentMzValues.back();
+                   << fragmentMzValues.back();
             fragIntensity << fixed
                           << setprecision(10)
-                          << c->fragmentIntensities.back();
-            fragIonType << c->fragmentIonTypes.rbegin()->second;
+                          << fragmentIntensities.back();
+            fragIonType << fragmentIonTypes.rbegin()->second;
         }
 
-        compoundsQuery->bind(":compound_id", c->id);
-        compoundsQuery->bind(":db_name", c->db);
-        compoundsQuery->bind(":name", c->name);
+        compoundsQuery->bind(":compound_id", c->id());
+        compoundsQuery->bind(":db_name", c->db());
+        compoundsQuery->bind(":name", c->name());
         compoundsQuery->bind(":formula", c->formula());
-        compoundsQuery->bind(":smile_string", c->smileString);
-        compoundsQuery->bind(":srm_id", c->srmId);
+        compoundsQuery->bind(":smile_string", c->smileString());
+        compoundsQuery->bind(":srm_id", c->srmId());
 
-        compoundsQuery->bind(":mass", c->mass);
-        compoundsQuery->bind(":charge", c->charge);
-        compoundsQuery->bind(":expected_rt", c->expectedRt);
-        compoundsQuery->bind(":precursor_mz", c->precursorMz);
-        compoundsQuery->bind(":product_mz", c->productMz);
+        compoundsQuery->bind(":mass", c->mz());
+        compoundsQuery->bind(":charge", c->charge());
+        compoundsQuery->bind(":expected_rt", c->expectedRt());
+        compoundsQuery->bind(":precursor_mz", c->precursorMz());
+        compoundsQuery->bind(":product_mz", c->productMz());
 
-        compoundsQuery->bind(":collision_energy", c->collisionEnergy);
-        compoundsQuery->bind(":log_p", c->logP);
-        compoundsQuery->bind(":virtual_fragmentation", c->virtualFragmentation);
-        compoundsQuery->bind(":ionization_mode", c->ionizationMode);
+        compoundsQuery->bind(":collision_energy", c->collisionEnergy());
+        compoundsQuery->bind(":log_p", c->logP());
+        compoundsQuery->bind(":virtual_fragmentation", c->virtualFragmentation());
+
+        int ionizationMode;
+        if(c->ionizationMode == Compound::IonizationMode::Positive)
+            ionizationMode = +1;
+        else if(c->ionizationMode == Compound::IonizationMode::Negative)
+            ionizationMode = -1;
+        else
+            ionizationMode = 0;
+        compoundsQuery->bind(":ionization_mode", ionizationMode);
 
         compoundsQuery->bind(":category", catStr);
         compoundsQuery->bind(":fragment_mzs", fragMz.str());
         compoundsQuery->bind(":fragment_intensity", fragIntensity.str());
         compoundsQuery->bind(":fragment_ion_types", fragIonType.str());
 
-        compoundsQuery->bind(":note", c->note);
+        compoundsQuery->bind(":note", c->note());
         if (!compoundsQuery->execute())
-            cerr << "Error: failed to save compound " << c->name << endl;
+            cerr << "Error: failed to save compound " << c->name() << endl;
     }
 
     _connection->commit();
@@ -687,7 +701,10 @@ void ProjectDatabase::saveSettings(const map<string, variant>& settingsMap)
                       , :main_window_mass_resolution      \
                       , :must_have_fragmentation          \
                       , :identification_match_rt          \
-                      , :identification_rt_window         )");
+                      , :identification_rt_window         \
+                      , :search_adducts                   \
+                      , :adduct_search_window             \
+                      , :adduct_percent_correlation       )");
 
     settingsQuery->bind(":ionization_mode", BINT(settingsMap.at("ionizationMode")));
     settingsQuery->bind(":ionization_type", BINT(settingsMap.at("ionizationType")));
@@ -762,6 +779,9 @@ void ProjectDatabase::saveSettings(const map<string, variant>& settingsMap)
     settingsQuery->bind(":match_rt", BINT(settingsMap.at("matchRt")));
     settingsQuery->bind(":compound_rt_window", BDOUBLE(settingsMap.at("compoundRtWindow")));
     settingsQuery->bind(":limit_groups_per_compound", BINT(settingsMap.at("limitGroupsPerCompound")));
+    settingsQuery->bind(":search_adducts", BINT(settingsMap.at("searchAdducts")));
+    settingsQuery->bind(":adduct_search_window", BDOUBLE(settingsMap.at("adductSearchWindow")));
+    settingsQuery->bind(":adduct_percent_correlation", BDOUBLE(settingsMap.at("adductPercentCorrelation")));
 
     settingsQuery->bind(":match_fragmentation", BINT(settingsMap.at("matchFragmentation")));
     settingsQuery->bind(":min_frag_match_score", BDOUBLE(settingsMap.at("minFragMatchScore")));
@@ -924,8 +944,8 @@ vector<PeakGroup*> ProjectDatabase::loadGroups(const vector<mzSample*>& loaded)
         group->fragMatchScore.numMatches =
             groupsQuery->doubleValue("fragmentation_num_matches");
 
-        group->setType(PeakGroup::GroupType(groupsQuery->integerValue("type")));
-        group->searchTableName = groupsQuery->stringValue("table_name");
+        group->setType(static_cast<PeakGroup::GroupType>(groupsQuery->integerValue("type")));
+        group->setTableName(groupsQuery->stringValue("table_name"));
         group->minQuality = groupsQuery->doubleValue("min_quality");
 
         string compoundId = groupsQuery->stringValue("compound_id");
@@ -937,22 +957,19 @@ vector<PeakGroup*> ProjectDatabase::loadGroups(const vector<mzSample*>& loaded)
         if (!srmId.empty())
             group->setSrmId(srmId);
 
-        if (!adductName.empty())
-            group->adduct = _findAdductByName(adductName);
+        if (!adductName.empty()) {
+            group->setAdduct(_findAdductByName(adductName));
+        } else {
+            group->setAdduct(nullptr);
+        }
 
         if (!compoundId.empty()) {
             Compound* compound = _findSpeciesByIdAndName(compoundId,
                                                          compoundName,
                                                          compoundDB);
-            if (compound) {
+            if (compound)
                 group->setCompound(compound);
-            } else {
-                group->tagString = compoundName
-                                  + " | "
-                                  + adductName
-                                  + " | id="
-                                  + compoundId;
-            }
+
         } else if (!compoundName.empty() && !compoundDB.empty()) {
             vector<Compound*> matches = _findSpeciesByName(compoundName,
                                                            compoundDB);
@@ -1126,29 +1143,38 @@ vector<Compound*> ProjectDatabase::loadCompounds(const string databaseName)
 
         // the neutral mass is computed automatically inside the constructor
         Compound* compound = new Compound(id, name, formula, charge);
-        compound->db = db;
-        compound->expectedRt = expectedRt;
+        compound->setDb (db);
+        compound->setExpectedRt( expectedRt);
 
         if (formula.empty()) {
             if (mass > 0)
-                compound->mass = mass;
+                compound->setMz( mass);
         } else {
-            compound->mass =
-                    static_cast<float>(mcalc.computeNeutralMass(formula));
+            compound->setMz
+                    (static_cast<float>(mcalc.computeNeutralMass(formula)));
         }
 
-        compound->precursorMz = compoundsQuery->floatValue("precursor_mz");
-        compound->productMz = compoundsQuery->floatValue("product_mz");
-        compound->collisionEnergy =
-                compoundsQuery->floatValue("collision_energy");
-        compound->smileString = compoundsQuery->stringValue("smile_string");
-        compound->logP = compoundsQuery->floatValue("log_p");
-        compound->ionizationMode = compoundsQuery->floatValue("ionization_mode");
-        compound->note = compoundsQuery->stringValue("note");
+        compound->setPrecursorMz ( compoundsQuery->floatValue("precursor_mz"));
+        compound->setProductMz (compoundsQuery->floatValue("product_mz"));
+        compound->setCollisionEnergy
+                (compoundsQuery->floatValue("collision_energy"));
+        compound->setSmileString (compoundsQuery->stringValue("smile_string"));
+        compound->setLogP (compoundsQuery->floatValue("log_p"));
+
+        int ionizationMode;
+        ionizationMode = compoundsQuery->floatValue("ionization_mode");
+        if (ionizationMode > 0)
+            compound->ionizationMode = Compound::IonizationMode::Positive;
+        else if (ionizationMode < 0)
+            compound->ionizationMode = Compound::IonizationMode::Negative;
+        else
+            compound->ionizationMode = Compound::IonizationMode::Neutral;
+
+        compound->setNote (compoundsQuery->stringValue("note"));
 
         // mark compound as decoy if names contains DECOY string
-        if (compound->name.find("DECOY") != string::npos)
-            compound->isDecoy = true;
+        if (compound->name().find("DECOY") != string::npos)
+            compound->setIsDecoy (true);
 
         // lambda function to split a string using given delimiters
         auto split = [](string str, const char delim) {
@@ -1161,33 +1187,41 @@ vector<Compound*> ProjectDatabase::loadCompounds(const string databaseName)
         };
 
         string categories = compoundsQuery->stringValue("category");
+        vector<string> categoryVect;
         for (auto category : split(categories, ';')) {
             if (!category.empty())
-                compound->category.push_back(category);
+                categoryVect.push_back(category);
         }
+        compound->setCategory(categoryVect);
 
         string fragmentMzValues = compoundsQuery->stringValue("fragment_mzs");
+        vector<float> mzValues;
         for (string fragMz : split(fragmentMzValues, ';')) {
             if (!fragMz.empty())
-                compound->fragmentMzValues.push_back(stof(fragMz));
+                mzValues.push_back(stof(fragMz));
         }
+        compound->setFragmentMzValues(mzValues);
 
         string fragmentIntensities =
                 compoundsQuery->stringValue("fragment_intensity");
+        vector<float> intensities;
         for (string fragIntensity : split(fragmentIntensities, ';')) {
             if (!fragIntensity.empty())
-                compound->fragmentIntensities.push_back(stof(fragIntensity));
+                intensities.push_back(stof(fragIntensity));
         }
+        compound->setFragmentIntensities(intensities);
 
         vector<string> fragmentIonTypes =
             split(compoundsQuery->stringValue("fragment_ion_types"), ';');
+        map<int, string> ionTypes;
         for (size_t i = 0; i < fragmentIonTypes.size(); ++i) {
             string fragIonType = fragmentIonTypes[i];
             if (!fragIonType.empty())
-                compound->fragmentIonTypes[i] = fragIonType;
+                ionTypes[i] = fragIonType;
         }
+        compound->setFragmentIonTypes(ionTypes);
 
-        _compoundIdMap[compound->id  + compound->name + compound->db] = compound;
+        _compoundIdMap[compound->id()  + compound->name() + compound->db()] = compound;
         compounds.push_back(compound);
         loadCount++;
     }
@@ -1355,6 +1389,9 @@ map<string, variant> ProjectDatabase::loadSettings()
         settingsMap["matchRt"] = variant(settingsQuery->integerValue("match_rt"));
         settingsMap["compoundRtWindow"] = variant(settingsQuery->doubleValue("compound_rt_window"));
         settingsMap["limitGroupsPerCompound"] = variant(settingsQuery->integerValue("limit_groups_per_compound"));
+        settingsMap["searchAdducts"] = variant(settingsQuery->integerValue("search_adducts"));
+        settingsMap["adductSearchWindow"] = variant(settingsQuery->doubleValue("adduct_search_window"));
+        settingsMap["adductPercentCorrelation"] = variant(settingsQuery->doubleValue("adduct_percent_correlation"));
 
         settingsMap["matchFragmentation"] = settingsQuery->doubleValue("match_fragmentation");
         settingsMap["minFragMatchScore"] = variant(settingsQuery->integerValue("min_frag_match_score"));
@@ -1486,7 +1523,7 @@ void ProjectDatabase::deletePeakGroup(PeakGroup* group)
     if (!group)
         return;
 
-    string tableName = group->searchTableName;
+    string tableName = group->tableName();
     vector<int> selectedGroups;
     selectedGroups.push_back(group->groupId);
     for (const auto& child : group->children)
@@ -1610,15 +1647,9 @@ void ProjectDatabase::_assignSampleIds(const vector<mzSample*>& samples) {
     }
 }
 
-Adduct* ProjectDatabase::_findAdductByName(string id)
+Adduct* ProjectDatabase::_findAdductByName(string name)
 {
-    if (id == "[M+H]+")
-        return MassCalculator::PlusHAdduct;
-    else if (id == "[M-H]-")
-        return MassCalculator::MinusHAdduct;
-    else if (id == "[M]")
-        return MassCalculator::ZeroMassAdduct;
-    return nullptr;
+    return new Adduct(name, 0, 0, 0.0f);
 }
 
 Compound* ProjectDatabase::_findSpeciesByIdAndName(string id,
@@ -1644,7 +1675,7 @@ vector<Compound*> ProjectDatabase::_findSpeciesByName(string name,
     vector<Compound*> similarlyNamedCompounds;
     for (const auto& key : _compoundIdMap) {
         Compound* compound = key.second;
-        if (compound->name == name && compound->db == databaseName)
+        if (compound->name() == name && compound->db() == databaseName)
             similarlyNamedCompounds.push_back(compound);
     }
     return similarlyNamedCompounds;

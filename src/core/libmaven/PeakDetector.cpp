@@ -1,3 +1,5 @@
+#include "adductdetection.h"
+#include "datastructures/adduct.h"
 #include "classifierNeuralNet.h"
 #include "datastructures/mzSlice.h"
 #include "obiwarp.h"
@@ -15,6 +17,7 @@
 #include "mavenparameters.h"
 #include "mzMassCalculator.h"
 #include "isotopeDetection.h"
+#include "Scan.h"
 
 PeakDetector::PeakDetector() {
     mavenParameters = NULL;
@@ -59,10 +62,10 @@ vector<EIC*> PeakDetector::pullEICs(mzSlice* slice,
 
             if (!slice->srmId.empty()) {
                 e = sample->getEIC(slice->srmId, mp->eicType);
-            } else if (c && c->precursorMz > 0 && c->productMz > 0) {
-                e = sample->getEIC(c->precursorMz,
-                                   c->collisionEnergy,
-                                   c->productMz,
+            } else if (c && c->precursorMz() > 0 && c->productMz() > 0) {
+                e = sample->getEIC(c->precursorMz(),
+                                   c->collisionEnergy(),
+                                   c->productMz(),
                                    mp->eicType,
                                    mp->filterline,
                                    mp->amuQ1,
@@ -142,12 +145,6 @@ void PeakDetector::pullAllIsotopes() {
             isotopeDetection.pullIsotopes(&group);
         }
 
-        if (compound) {
-            if (!compound->hasGroup() ||
-                group.groupRank < compound->getPeakGroup()->groupRank)
-                compound->setPeakGroup(group);
-        }
-
 
         if (mavenParameters->showProgressFlag &&
             mavenParameters->pullIsotopesFlag && j % 10 == 0) {
@@ -196,7 +193,7 @@ void PeakDetector::processMassSlices(const vector<Compound*>& identificationSet)
     sendBoostSignal("Peak Detection",0,1);
 
     // process goodslices
-    processSlices(massSlices.slices, "allslices");
+    processSlices(massSlices.slices, "groups");
 
     // identify features with known targets
     identifyFeatures(identificationSet);
@@ -214,52 +211,52 @@ void PeakDetector::processMassSlices(const vector<Compound*>& identificationSet)
  * maximum RT and its SRM ID TODO: i dont know what is the use of SRM ID.
  */
 vector<mzSlice*> PeakDetector::processCompounds(vector<Compound*> set,
-                                                string setName) {
+                                                std::string setName)
+{
+    vector<mzSlice*> slices;
 
-        //While doing a compound database search limitGroupCount is set to
-        //INT_MAX because we want all the peaks in the group
-        //When doing the peakdetection without database then the amount of
-        //peaks that will be there will be huge then its better to take the
-        //first n relevent peaks rather than all the peaks
-        //mavenParameters->limitGroupCount = INT_MAX;
+    if (set.size() == 0)
+        return slices;
 
-        //iterating over all compounds in the set
-        vector<mzSlice*> slices;
+    Adduct* adduct = nullptr;
+    for (auto parentAdduct : mavenParameters->getDefaultAdductList()) {
+        if (SIGN(parentAdduct->getCharge())
+            == SIGN(mavenParameters->ionizationMode)) {
+            adduct = parentAdduct;
+        }
+    }
 
-        //Looping over the compounds in the compound database
-        for (unsigned int i = 0; i < set.size(); i++) {
-                if (mavenParameters->stop) {
-                    delete_all(slices);
-                    break;
-                }
+    if (adduct == nullptr)
+        return slices;
 
-                Compound* c = set[i];
-                if (c == NULL)
-                        continue;
-
-                mzSlice* slice = new mzSlice();
-
-                //setting the compound information into the slices
-                slice->compound = c;
-
-                slice->setSRMId();
-
-                if (c->precursorMz == 0 || c->productMz == 0) {
-
-                    //Calculating the mzmin and mzmax
-                    int charge = mavenParameters->getCharge(c);
-                    bool success  = \
-                    slice->calculateMzMinMax(mavenParameters->compoundMassCutoffWindow, charge);
-                    if (!success) continue;
-                }
-
-                //calculating the min and max RT
-                slice->calculateRTMinMax(mavenParameters->matchRtFlag, \
-                                        mavenParameters->compoundRTWindow);
-                slices.push_back(slice);
+    for(auto compound : set) {
+        if (mavenParameters->stop) {
+            delete_all(slices);
+            break;
         }
 
-        return slices;
+        sendBoostSignal("Preparing libraries for search…", 0, 0);
+
+        if (compound == nullptr)
+            continue;
+
+        if (compound->type() == Compound::Type::MRM) {
+            mzSlice* slice = new mzSlice();
+            slice->compound = compound;
+            slice->setSRMId();
+            slice->calculateRTMinMax(mavenParameters->matchRtFlag,
+                                     mavenParameters->compoundRTWindow);
+            slices.push_back(slice);
+        } else {
+            mzSlice* slice =
+                AdductDetection::createSliceForCompoundAdduct(compound,
+                                                              adduct,
+                                                              mavenParameters);
+            slices.push_back(slice);
+        }
+    }
+
+    return slices;
 }
 
 void PeakDetector::alignSamples(const int& method) {
@@ -309,6 +306,37 @@ void PeakDetector::processSlices(vector<mzSlice*> &slices, string setName)
     if (slices.empty())
         return;
 
+    // lambda that adds detected groups to mavenparameters
+    auto detectGroupsForSlice = [&](vector<EIC*>& eics, mzSlice* slice) {
+        vector<PeakGroup> peakgroups =
+        EIC::groupPeaks(eics,
+                        slice,
+                        mavenParameters->eic_smoothingWindow,
+                        mavenParameters->grouping_maxRtWindow,
+                        mavenParameters->minQuality,
+                        mavenParameters->distXWeight,
+                        mavenParameters->distYWeight,
+                        mavenParameters->overlapWeight,
+                        mavenParameters->useOverlap,
+                        mavenParameters->minSignalBaselineDifference,
+                        mavenParameters->fragmentTolerance,
+                        mavenParameters->scoringAlgo);
+
+        GroupFiltering groupFiltering(mavenParameters, slice);
+        groupFiltering.filter(peakgroups);
+
+        // sort groups according to their rank
+        std::sort(peakgroups.begin(), peakgroups.end(),
+                  PeakGroup::compRank);
+
+        for (unsigned int j = 0; j < peakgroups.size(); j++) {
+            // check for duplicates	and append group
+            if (j >= mavenParameters->eicMaxGroups)
+                break;
+            mavenParameters->allgroups.push_back(peakgroups[j]);
+        }
+    };
+
     mavenParameters->allgroups.clear();
     sort(slices.begin(), slices.end(), mzSlice::compIntensity);
     for (unsigned int s = 0; s < slices.size(); s++) {
@@ -316,9 +344,7 @@ void PeakDetector::processSlices(vector<mzSlice*> &slices, string setName)
             break;
 
         mzSlice* slice = slices[s];
-        Compound* compound = slice->compound;
-        if (compound != nullptr && compound->hasGroup())
-            compound->unlinkGroup();
+        Compound *compound = slice->compound;
 
         vector<EIC*> eics = pullEICs(slice,
                                      mavenParameters->samples,
@@ -361,36 +387,11 @@ void PeakDetector::processSlices(vector<mzSlice*> &slices, string setName)
             continue;
         }
 
-        PeakFiltering peakFiltering(mavenParameters, false);
+        bool isIsotope = false;
+        PeakFiltering peakFiltering(mavenParameters, isIsotope);
         peakFiltering.filter(eics);
 
-        vector<PeakGroup> peakgroups =
-            EIC::groupPeaks(eics,
-                            slice,
-                            mavenParameters->eic_smoothingWindow,
-                            mavenParameters->grouping_maxRtWindow,
-                            mavenParameters->minQuality,
-                            mavenParameters->distXWeight,
-                            mavenParameters->distYWeight,
-                            mavenParameters->overlapWeight,
-                            mavenParameters->useOverlap,
-                            mavenParameters->minSignalBaselineDifference,
-                            mavenParameters->fragmentTolerance,
-                            mavenParameters->scoringAlgo);
-        
-        GroupFiltering groupFiltering(mavenParameters, slice);
-        groupFiltering.filter(peakgroups);
-
-        // sort groups according to their rank
-        sort(peakgroups.begin(), peakgroups.end(), PeakGroup::compRank);
-
-        for (unsigned int j = 0; j < peakgroups.size(); j++) {
-            // check for duplicates	and append group
-            if (j >= mavenParameters->eicMaxGroups)
-                break;
-
-            mavenParameters->allgroups.push_back(peakgroups[j]);
-        }
+        detectGroupsForSlice(eics, slice);
 
         // cleanup
         delete_all(eics);
@@ -408,7 +409,8 @@ void PeakDetector::processSlices(vector<mzSlice*> &slices, string setName)
         if (mavenParameters->showProgressFlag && s % 10 == 0) {
             string progressText = "Found "
                                   + to_string(mavenParameters->allgroups.size())
-                                  + " groups";
+                                  + " "
+                                  + setName;
             sendBoostSignal(progressText,
                             s + 1,
                             std::min((int)slices.size(),
@@ -430,11 +432,11 @@ void PeakDetector::identifyFeatures(const vector<Compound*>& identificationSet)
         bool matchFound = false;
         for (auto compound : identificationSet) {
             float mz = 0.0f;
-            if (compound->formula().length() || compound->neutralMass != 0.0f) {
+            if (compound->formula().length() || compound->neutralMass() != 0.0f) {
                 int charge = mavenParameters->getCharge(compound);
                 mz = compound->adjustedMass(charge);
             } else {
-                mz = compound->mass;
+                mz = compound->mz();
             }
             if (mzUtils::withinXMassCutoff(mz,
                                            group.meanMz,

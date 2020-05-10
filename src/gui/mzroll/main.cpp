@@ -21,7 +21,6 @@
 #include "stable.h"
 #include "base64.h"
 #include "Compound.h"
-#include "gettingstarted.h"
 #include "mainwindow.h"
 #include "database.h"
 #include "mzfileio.h"
@@ -72,13 +71,13 @@ void initializeLogger()
     ElMavenLogger::init(path.toStdString());
 }
 
-
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
     qApp->setOrganizationName("ElucidataInc");
     qApp->setApplicationName("El-Maven");
     qApp->setApplicationVersion(STR(EL_MAVEN_VERSION));
+    qApp->setAttribute(Qt::AA_UseHighDpiPixmaps);
 
 #ifdef __OSX_AVAILABLE
 #ifndef DEBUG
@@ -139,7 +138,6 @@ int main(int argc, char *argv[])
 
     splash.finish(contrl.getMainWindow());
     contrl.getMainWindow()->show();
-    contrl.getMainWindow()->gettingstarted->showDialog();
     contrl.getMainWindow()->fileLoader->start();
     int rv = app.exec();
 

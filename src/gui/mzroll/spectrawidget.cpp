@@ -1,3 +1,4 @@
+#include "datastructures/adduct.h"
 #include "line.h"
 #include "Compound.h"
 #include "constants.h"
@@ -292,31 +293,33 @@ void SpectraWidget::overlayPeakGroup(PeakGroup* group)
 void SpectraWidget::overlayCompoundFragmentation(Compound* c)
 {
     clearOverlay();
-    if (!_currentScan || !c || c->fragmentMzValues.size() == 0) return;
+    if (!_currentScan || !c || c->fragmentMzValues().size() == 0) return;
 
     SpectralHit hit;
         hit.score = 0;
     //TODO: precursormz should be preset as the compound m/z
     //compound->mass should be reserved for exact mass or renamed
-    if (!c->formula().empty() || c->neutralMass != 0.0f)
-        c->precursorMz = c->adjustedMass(mainwindow->mavenParameters->getCharge(c));
-    if (mzUtils::almostEqual(c->precursorMz, 0.0f))
-        c->precursorMz = c->mass;
-    hit.precursorMz = c->precursorMz;
+        if (!c->formula().empty() || c->neutralMass() != 0.0f)
+        c->setPrecursorMz ( c->adjustedMass(mainwindow->mavenParameters->getCharge(c)));
+    if (mzUtils::almostEqual(c->precursorMz(), 0.0f))
+        c->setPrecursorMz( c->mz());
+    hit.precursorMz = c->precursorMz();
     hit.matchCount = 0;
     hit.sampleName = "";
     hit.productPPM = mainwindow->mavenParameters->fragmentTolerance;
     hit.scan = nullptr;
-    for (unsigned int i = 0; i < c->fragmentMzValues.size(); i++) {
-        hit.mzList << c->fragmentMzValues[i];
-        hit.intensityList << c->fragmentIntensities[i];
+    auto fragmentMzValues = c->fragmentMzValues();
+    auto fragmentIntensities = c->fragmentIntensities();
+    for (unsigned int i = 0; i < fragmentMzValues.size(); i++) {
+        hit.mzList << fragmentMzValues[i];
+        hit.intensityList << fragmentIntensities[i];
     }
 
     links.clear();
 
     _spectralHit = hit;
 
-    cerr << "SpectraWidge::overlayCompoundfragmentation(Compound)" << c->name << " " << c->precursorMz << endl;
+    cerr << "SpectraWidge::overlayCompoundfragmentation(Compound)" << c->name() << " " << c->precursorMz() << endl;
 
     if (_currentScan && _currentScan->mslevel == 2) {
         _showOverlay = true;
@@ -513,7 +516,7 @@ void SpectraWidget::setGroupTitle()
     _titleText = QString();
 
     QString compoundName("");
-    if (_currentGroup.getCompound()) compoundName = QString(_currentGroup.getCompound()->name.c_str());
+    if (_currentGroup.getCompound()) compoundName = QString(_currentGroup.getCompound()->name().c_str());
     
     float purity = 0;
     if (_currentGroup.fragmentationPattern.mzValues.size()) {
@@ -1346,44 +1349,50 @@ vector<mzLink> SpectraWidget::findLinks(float centerMz, Scan* scan, MassCutoff *
     }
 	*/
 
-    for(int i=0; i < DB.fragmentsDB.size(); i++ ) {
-        Adduct* frag  = DB.fragmentsDB[i];
-    	if(frag->charge != 0 && SIGN(frag->charge) != SIGN(ionizationMode) ) continue;
-        float mzMinus=centerMz-frag->mass;
-        float mzPlus =centerMz+frag->mass;
-        if( scan->hasMz(mzPlus,massCutoff)) {
-            QString noteText = tr("%1 Fragment").arg(QString(DB.fragmentsDB[i]->name.c_str()));
-            links.push_back(mzLink(centerMz,mzPlus,noteText.toStdString()));
-        }
+    //TODO Shubhra: What is this meant to do?
+    // for(int i=0; i < DB.fragmentsDB.size(); i++ ) {
+    //     Adduct* frag  = DB.fragmentsDB[i];
+    // 	if(frag->charge != 0 && SIGN(frag->charge) != SIGN(ionizationMode) ) continue;
+    //     float mzMinus=centerMz-frag->mass;
+    //     float mzPlus =centerMz+frag->mass;
+    //     if( scan->hasMz(mzPlus,massCutoff)) {
+    //         QString noteText = tr("%1 Fragment").arg(QString(DB.fragmentsDB[i]->name.c_str()));
+    //         links.push_back(mzLink(centerMz,mzPlus,noteText.toStdString()));
+    //     }
 
-        if( scan->hasMz(mzMinus,massCutoff)) {
-            QString noteText = tr("%1 Fragment").arg(QString(DB.fragmentsDB[i]->name.c_str()));
-            links.push_back(mzLink(centerMz,mzMinus,noteText.toStdString()));
-        }
-    }
+    //     if( scan->hasMz(mzMinus,massCutoff)) {
+    //         QString noteText = tr("%1 Fragment").arg(QString(DB.fragmentsDB[i]->name.c_str()));
+    //         links.push_back(mzLink(centerMz,mzMinus,noteText.toStdString()));
+    //     }
+    // }
 
     //parent check
-    for(int i=0; i < DB.adductsDB.size(); i++ ) {
-    	if ( SIGN(DB.adductsDB[i]->charge) != SIGN(ionizationMode) ) continue;
-        float parentMass=DB.adductsDB[i]->computeParentMass(centerMz);
-        parentMass += ionizationMode * H_MASS;   //adjusted mass
+    //TODO Shubhra: Figure out the purpose of this function and uncomment as required
+    for(int i = 0; i < DB.adductsDB.size(); i++) {
+    	if (SIGN(DB.adductsDB[i]->getCharge()) != SIGN(ionizationMode))
+            continue;
+        //float parentMass=DB.adductsDB[i]->computeParentMass(centerMz);
+        //parentMass += ionizationMode * H_MASS;   //adjusted mass
 
-        if( abs(parentMass-centerMz)>0.1 && scan->hasMz(parentMass,massCutoff)) {
-            cerr << DB.adductsDB[i]->name << " " << DB.adductsDB[i]->charge << " " << parentMass << endl;
-            QString noteText = tr("Possible Parent %1").arg(QString(DB.adductsDB[i]->name.c_str()));
-            links.push_back(mzLink(centerMz,parentMass,noteText.toStdString()));
-        }
+    //TODO Shubhra: uncomment
+    //     if( abs(parentMass-centerMz)>0.1 && scan->hasMz(parentMass,massCutoff)) {
+    //         cerr << DB.adductsDB[i]->name << " " << DB.adductsDB[i]->charge << " " << parentMass << endl;
+    //         QString noteText = tr("Possible Parent %1").arg(QString(DB.adductsDB[i]->name.c_str()));
+    //         links.push_back(mzLink(centerMz,parentMass,noteText.toStdString()));
+    //     }
     }
 
     //adduct check
-    for(int i=0; i < DB.adductsDB.size(); i++ ) {
-    	if ( SIGN(DB.adductsDB[i]->charge) != SIGN(ionizationMode) ) continue;
-        float parentMass = centerMz-ionizationMode * H_MASS;   //adjusted mass
-        float adductMass=DB.adductsDB[i]->computeAdductMass(parentMass);
-        if( abs(adductMass-centerMz)>0.1 && scan->hasMz(adductMass,massCutoff)) {
-            QString noteText = tr("Adduct %1").arg(QString(DB.adductsDB[i]->name.c_str()));
-            links.push_back(mzLink(centerMz,adductMass,noteText.toStdString()));
-        }
+    //TODO Shubhra: uncomment
+    for(int i = 0; i < DB.adductsDB.size(); i++) {
+        if (SIGN(DB.adductsDB[i]->getCharge()) != SIGN(ionizationMode))
+            continue;
+    //     float parentMass = centerMz-ionizationMode * H_MASS;   //adjusted mass
+    //     float adductMass=DB.adductsDB[i]->computeAdductMass(parentMass);
+    //     if( abs(adductMass-centerMz)>0.1 && scan->hasMz(adductMass,massCutoff)) {
+    //         QString noteText = tr("Adduct %1").arg(QString(DB.adductsDB[i]->name.c_str()));
+    //         links.push_back(mzLink(centerMz,adductMass,noteText.toStdString()));
+    //     }
     }
 
 
