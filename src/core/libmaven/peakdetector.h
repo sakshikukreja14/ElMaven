@@ -48,6 +48,8 @@ public:
 
     void resetProgressBar();
 
+    void setFWHMforGroups();
+
     MavenParameters* mavenParameters() { return _mavenParameters; }
     void setMavenParameters(MavenParameters* mp) { _mavenParameters = mp; }
 
